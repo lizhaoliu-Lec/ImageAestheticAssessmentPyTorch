@@ -12,15 +12,15 @@ along with a rich variety of meta-data including
 paper reference: http://refbase.cvc.uab.es/files/MMP2012a.pdf
 code reference: https://github.com/mtobeiyf/ava_downloader
 
+You can download the whole dataset using the following url with torrent
+whole dataset: http://academictorrents.com/download/71631f83b11d3d79d8f84efe0a7e12f0ac001460.torrent (~30 GB)
+or, you can refer to the code reference mentioned above and download it via its instructions.
+
 Preprocess part:
 1) cd images
 2) 7z x images.7z.001
 """
 import os
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torchvision
 from PIL import Image
 
 from torchvision.datasets import VisionDataset
@@ -46,6 +46,16 @@ class AVABaseDataset(VisionDataset):
     7) challenge categories
     8) content categories #TODO for now not supported
     """
+
+    CORRUPTED_IMAGE_IDS = [
+        '512522', '627334', '523555', '593733',
+        '230701', '564093', '501015', '371434',
+        '440774', '501064', '453704', '2129',
+        '179118', '1617', '476416', '570175',
+        '547917', '502377', '499068', '564307',
+        '729377', '639811', '532055', '501095',
+        '277832', '556798',
+    ]
 
     def __init__(self, root, split='train', transforms=None):
         super().__init__(root=root, transforms=transforms)
@@ -86,9 +96,9 @@ class AVABaseDataset(VisionDataset):
         self._images = None
         self._targets = None
         self.all_imageIds = self._get_all_image_list()
-        print("====> all_imageIds: ", len(self.all_imageIds))
-        self.aesthetics_split = self._post_process_image_list(self.aesthetics_split, self.all_imageIds)
-        self.style_split = self._post_process_image_list(self.style_split, self.all_imageIds)
+        self.aesthetics_split = self._post_process_image_list(self.aesthetics_split, self.all_imageIds,
+                                                              self.CORRUPTED_IMAGE_IDS)
+        self.style_split = self._post_process_image_list(self.style_split, self.all_imageIds, self.CORRUPTED_IMAGE_IDS)
 
     @property
     def images(self):
@@ -229,11 +239,17 @@ class AVABaseDataset(VisionDataset):
         return id2name
 
     @staticmethod
-    def _post_process_image_list(image_list, all_image_list):
-        return list(set(image_list) & set(all_image_list))
+    def _post_process_image_list(image_list, all_image_list, CORRUPTED_IMAGE_IDS):
+        return list(set(image_list) & set(all_image_list) - set(CORRUPTED_IMAGE_IDS))
 
 
-class AestheticClassificationDataset(AVABaseDataset):
+class AVAAestheticClassificationDataset(AVABaseDataset):
+    """
+    AVAAestheticClassificationDataset that used for binary aesthetic classification.
+    The binary label is obtained by setting the label to 1 when the averaged aesthetic scores > 5
+    and setting to 0 otherwise.
+    """
+
     def __init__(self, root, split='train', transforms=None):
         super().__init__(root=root, split=split, transforms=transforms)
         self._images = self.aesthetics_split
@@ -241,7 +257,13 @@ class AestheticClassificationDataset(AVABaseDataset):
                          self.imageId2ava_contents.keys()}
 
 
-class AestheticDistributionDataset(AVABaseDataset):
+class AVAAestheticDistributionDataset(AVABaseDataset):
+    """
+    AVAAestheticDistributionDataset that used for aesthetic distribution matching,
+    since the binary classification is often too hard and not accurate enough to reflect the image level aesthetic.
+    The aesthetic distribution is obtained by normalizing the score count from 1 to 10.
+    """
+
     def __init__(self, root, split='train', transforms=None):
         super().__init__(root=root, split=split, transforms=transforms)
         self._images = self.aesthetics_split
@@ -249,7 +271,13 @@ class AestheticDistributionDataset(AVABaseDataset):
                          self.imageId2ava_contents.keys()}
 
 
-class AestheticRegressionDataset(AVABaseDataset):
+class AVAAestheticRegressionDataset(AVABaseDataset):
+    """
+    AVAAestheticRegressionDataset that used for aesthetic score regression,
+    since the ranking in aesthetic assessment is often very important.
+    The aesthetic score is obtained by averaging the score from 1 to 10.
+    """
+
     def __init__(self, root, split='train', transforms=None):
         super().__init__(root=root, split=split, transforms=transforms)
         self._images = self.aesthetics_split
@@ -257,7 +285,7 @@ class AestheticRegressionDataset(AVABaseDataset):
                          self.imageId2ava_contents.keys()}
 
 
-class StyleClassificationDataset(AVABaseDataset):
+class AVAStyleClassificationDataset(AVABaseDataset):
     def __init__(self, root, split='train', transforms=None):
         super().__init__(root=root, split=split, transforms=transforms)
         self._images = self.style_split
@@ -266,6 +294,8 @@ class StyleClassificationDataset(AVABaseDataset):
 
 if __name__ == '__main__':
     from tqdm import tqdm
+    import matplotlib.pyplot as plt
+    from random import shuffle
 
 
     def print_dict_with_limit(d: dict, limit: int, name: str):
@@ -355,23 +385,66 @@ if __name__ == '__main__':
             detect_invalid_char(s)
 
 
-    def run_AestheticClassificationDataset():
-        # d_train = AestheticClassificationDataset(root='E:/Datasets/AVA', split='train')
-        # d_test = AestheticClassificationDataset(root='E:/Datasets/AVA', split='test')
-        d_train = AestheticClassificationDataset(root='/home/liulizhao/datasets/AVA_dataset', split='train')
-        d_test = AestheticClassificationDataset(root='/home/liulizhao/datasets/AVA_dataset', split='test')
+    def run_AVADataset(AVADataset, _break=True):
+        d_train = AVADataset(root='/home/liulizhao/datasets/AVA_dataset', split='train')
+        d_test = AVADataset(root='/home/liulizhao/datasets/AVA_dataset', split='test')
 
         print("===> Train: \n", d_train)
         print("===> Test: \n", d_test)
 
-        for image, target in tqdm(d_train):
-            # print("===> Image: ", image)
-            # print("===> target: ", target)
-            ...
-        for image, target in tqdm(d_test):
-            # print("===> Image: ", image)
-            # print("===> target: ", target)
-            ...
+        for d in [d_train, d_test]:
+            for image, target in tqdm(d):
+                # print("===> Image: ", image)
+                # print("===> target: ", target)
+                if _break:
+                    print("===> image: ", image)
+                    print("===> target: ", target)
+                    break
+
+
+    def run_all_dataset():
+        run_AVADataset(AVAAestheticClassificationDataset, False)
+        run_AVADataset(AVAAestheticDistributionDataset)
+        run_AVADataset(AVAAestheticRegressionDataset)
+        run_AVADataset(AVAStyleClassificationDataset, False)
+
+
+    def visualize_AVADataset(AVADataset, num=3):
+        d_train = AVADataset(root='/home/liulizhao/datasets/AVA_dataset', split='train')
+        d_test = AVADataset(root='/home/liulizhao/datasets/AVA_dataset', split='test')
+
+        train_ids = list(range(len(d_train)))
+        test_ids = list(range(len(d_test)))
+
+        shuffle(train_ids)
+        shuffle(test_ids)
+
+        for train_id, test_id in zip(train_ids[:num], test_ids[:num]):
+            image, target = d_train[train_id]
+            plt.subplot(121)
+            plt.axis('off')
+            plt.imshow(image)
+            if isinstance(target, list):
+                target = ['%.2f' % t for t in target]
+            plt.title("{0} Train\n Label: {1}".format(AVADataset.__name__, target))
+            plt.tight_layout()
+            image, target = d_test[test_id]
+            if isinstance(target, list):
+                target = ['%.2f' % t for t in target]
+            plt.subplot(122)
+            plt.axis('off')
+            plt.imshow(image)
+            plt.title("{0} Test\n Label: {1}".format(AVADataset.__name__, target))
+            plt.tight_layout()
+            plt.show()
+            plt.close()
+
+
+    def visualize_all_dataset():
+        visualize_AVADataset(AVAAestheticClassificationDataset)
+        visualize_AVADataset(AVAAestheticDistributionDataset)
+        visualize_AVADataset(AVAAestheticRegressionDataset)
+        visualize_AVADataset(AVAStyleClassificationDataset)
 
 
     # run_process_aesthetics_split()
@@ -380,4 +453,5 @@ if __name__ == '__main__':
     # run_process_style_split()
     # run_process_style_content()
     # compare_ava_and_aesthetic_split()
-    run_AestheticClassificationDataset()
+    # run_all_dataset()
+    visualize_all_dataset()
