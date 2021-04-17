@@ -26,6 +26,8 @@ from torchvision.datasets import VisionDataset
 
 from dataset.utils import check_if_file_exists, join
 
+from dataset import DatasetFactory
+
 
 class AADBBaseDataset(VisionDataset):
     """
@@ -103,6 +105,7 @@ class AADBBaseDataset(VisionDataset):
             return data['testNameList'], data['testScore']
 
 
+@DatasetFactory.register('AADBClassificationDataset')
 class AADBClassificationDataset(AADBBaseDataset):
     """
     AADBClassificationDataset that used for binary aesthetic classification.
@@ -115,6 +118,7 @@ class AADBClassificationDataset(AADBBaseDataset):
         self._targets = [1 if s > 0.5 else 0 for s in self.scores]
 
 
+@DatasetFactory.register('AADBRegressionDataset')
 class AADBRegressionDataset(AADBBaseDataset):
     """
     AADBRegressionDataset that used for aesthetic score regression,

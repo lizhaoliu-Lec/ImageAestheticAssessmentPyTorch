@@ -27,6 +27,8 @@ from torchvision.datasets import VisionDataset
 
 from dataset.utils import check_if_file_exists, join
 
+from dataset import DatasetFactory
+
 
 class AVABaseDataset(VisionDataset):
     """
@@ -243,6 +245,7 @@ class AVABaseDataset(VisionDataset):
         return list(set(image_list) & set(all_image_list) - set(CORRUPTED_IMAGE_IDS))
 
 
+@DatasetFactory.register('AVAAestheticClassificationDataset')
 class AVAAestheticClassificationDataset(AVABaseDataset):
     """
     AVAAestheticClassificationDataset that used for binary aesthetic classification.
@@ -257,6 +260,7 @@ class AVAAestheticClassificationDataset(AVABaseDataset):
                          self.imageId2ava_contents.keys()}
 
 
+@DatasetFactory.register('AVAAestheticDistributionDataset')
 class AVAAestheticDistributionDataset(AVABaseDataset):
     """
     AVAAestheticDistributionDataset that used for aesthetic distribution matching,
@@ -271,6 +275,7 @@ class AVAAestheticDistributionDataset(AVABaseDataset):
                          self.imageId2ava_contents.keys()}
 
 
+@DatasetFactory.register('AVAAestheticRegressionDataset')
 class AVAAestheticRegressionDataset(AVABaseDataset):
     """
     AVAAestheticRegressionDataset that used for aesthetic score regression,
@@ -285,6 +290,7 @@ class AVAAestheticRegressionDataset(AVABaseDataset):
                          self.imageId2ava_contents.keys()}
 
 
+@DatasetFactory.register('AVAStyleClassificationDataset')
 class AVAStyleClassificationDataset(AVABaseDataset):
     def __init__(self, root, split='train', transforms=None):
         super().__init__(root=root, split=split, transforms=transforms)
