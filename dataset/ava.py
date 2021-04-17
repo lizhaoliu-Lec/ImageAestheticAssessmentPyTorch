@@ -3,7 +3,7 @@ AVA: A large-scale database for aesthetic visual analysis. CVPR 2012
 A large-scale database for conducting Aesthetic Visual Analysis: AVA.
 
 It contains:
-===> 1)　over 250,000 images, 235,599 (training) and 19,930 (testing)
+===> 1)　over 250,000 images, 235556 (training) and 19926 (testing)
 along with a rich variety of meta-data including
 ===> 2) a large number of aesthetic scores for each image,
 ===> 3) semantic labels for over 60 categories as well as

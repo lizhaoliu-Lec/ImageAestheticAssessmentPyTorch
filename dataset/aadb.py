@@ -2,7 +2,7 @@
 Photo Aesthetics Ranking Network with Attributes and Content Adaptation. ECCV 2016
 A aesthetics and attributes database (AADB) which contains:
 
-===> 0) 10,000 images in total, 8,500 (training), 500 (validation), and 1,000 (testing)
+===> 0) 10,000 images in total, 8458 (training) and 1,000 (testing)
 with
 ===> 1) aesthetic scores
 and
