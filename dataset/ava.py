@@ -25,7 +25,7 @@ from PIL import Image
 
 from torchvision.datasets import VisionDataset
 
-from dataset.utils import check_if_file_exists, join
+from common.utils import check_if_file_exists, join
 
 from dataset import DatasetFactory
 
@@ -115,8 +115,8 @@ class AVABaseDataset(VisionDataset):
         image = Image.open(join(self.image_root, image_id + '.jpg')).convert('RGB')
         target = self.targets[image_id]
 
-        if self.transform:
-            image = self.transform(image)
+        if self.transforms:
+            image = self.transforms(image)
 
         return image, target
 
