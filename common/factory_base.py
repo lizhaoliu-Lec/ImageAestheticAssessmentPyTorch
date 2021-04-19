@@ -19,8 +19,11 @@ class FactoryBase:
 
         return wrapper
 
-    def instantiate(self, key, **kwargs):
+    def _instantiate(self, key, **kwargs):
         return self[key](**kwargs)
+
+    def instantiate(self, config):
+        return self[config['name']](**config['params'])
 
     def keys(self):
         return self._dict.keys()
