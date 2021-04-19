@@ -1,9 +1,9 @@
 import numbers
 from typing import List
 
-from torch.linalg import Tensor
+from torch import Tensor
 from torchvision import transforms
-from torchvision.transforms.functional import _get_image_size, crop, center_crop
+from torchvision.transforms.functional import center_crop
 
 import random
 
@@ -32,37 +32,34 @@ def random_five_crop(img: Tensor, size: List[int]) -> Tensor:
     """
     if isinstance(size, numbers.Number):
         size = (int(size), int(size))
-    elif isinstance(size, (tuple, list)) and len(size) == 1:
-        size = (size[0], size[0])
+    else:
+        assert len(size) == 2, "Please provide only two dimensions (h, w) for size."
 
-    if len(size) != 2:
-        raise ValueError("Please provide only two dimensions (h, w) for size.")
-
-    image_width, image_height = _get_image_size(img)
-    crop_height, crop_width = size
-    if crop_width > image_width or crop_height > image_height:
-        msg = "Requested crop size {} is bigger than input size {}"
-        raise ValueError(msg.format(size, (image_height, image_width)))
+    w, h = img.size
+    crop_h, crop_w = size
+    if crop_w > w or crop_h > h:
+        raise ValueError("Requested crop size {} is bigger than input size {}".format(size,
+                                                                                      (h, w)))
 
     def _select_according_to_rand():
         rand = random.randint(0, 4)
 
         if rand == 0:
-            return crop(img, 0, 0, crop_height, crop_width)
+            return img.crop((0, 0, crop_w, crop_h))
         elif rand == 1:
-            return crop(img, 0, image_width - crop_width, crop_height, crop_width)
+            return img.crop((w - crop_w, 0, w, crop_h))
         elif rand == 2:
-            return crop(img, image_height - crop_height, 0, crop_height, crop_width)
+            return img.crop((0, h - crop_h, crop_w, h))
         elif rand == 3:
-            return crop(img, image_height - crop_height, image_width - crop_width, crop_height, crop_width)
+            return img.crop((w - crop_w, h - crop_h, w, h))
         else:
-            return center_crop(img, [crop_height, crop_width])
+            return center_crop(img, (crop_h, crop_w))
 
     return _select_according_to_rand()
 
 
 @TransformFactory.register('Scale')
-class Scale(transforms.Scale):
+class Scale(transforms.Resize):
     def __init__(self, size=256, **kwargs):
         super(Scale, self).__init__(size=size, **kwargs)
 
@@ -101,3 +98,8 @@ class Normalize(transforms.Normalize):
     def __init__(self, mean=(0.485, 0.456, 0.406),
                  std=(0.229, 0.224, 0.225), **kwargs):
         super().__init__(mean=mean, std=std, **kwargs)
+
+
+@TransformFactory.register('CenterCrop')
+class CenterCrop(transforms.CenterCrop):
+    pass
