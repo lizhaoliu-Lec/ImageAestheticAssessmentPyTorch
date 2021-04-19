@@ -23,3 +23,5 @@ Note that this is a work in process.
 ## Supported Models
 - [Unified Net](https://openaccess.thecvf.com/content_ICCV_2019/papers/Lee_Image_Aesthetic_Assessment_Based_on_Pairwise_Comparison__A_Unified_ICCV_2019_paper.pdf) Image Aesthetic Assessment Based on Pairwise Comparison – A Unified
 Approach to Score Regression, Binary Classification, and Personalization (*In Progress*)
+- [PAC-Net](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8451621) PAC-NET: PAIRWISE AESTHETIC COMPARISON NETWORK FOR IMAGE AESTHETIC
+ASSESSMENT (*TODO*)
