@@ -16,7 +16,7 @@ Note that this is a work in process.
     - 10,000 images in total, 8458 (training) and 1,000 (testing)
     - aesthetic scores for each image
     - meaningful attributes assigned to each image (*TODO*)
-- [CHAED](https://www.ijcai.org/Proceedings/15/Papers/356.pdf) 
+- [CHAED](https://www.ijcai.org/Proceedings/15/Papers/356.pdf) A chinese handwriting aesthetic evaluation database
     - 1000 Chinese handwriting images 
     - diverse aesthetic qualities for each image (rated by 33 subjects) (*TODO*)
 
