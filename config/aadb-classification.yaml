@@ -12,6 +12,7 @@ trainer:
     epoch: 120
     gpu: !!python/list [ 2, 3 ]
     log_every: 5
+    num_workers: 8
 # config for dataset
 dataset:
   name: AADBClassificationDataset
@@ -31,9 +32,11 @@ loss:
   name: CrossEntropyLoss
 # config for optimizer
 optimizer:
-  name: Adam
+  name: SGD
   params:
     lr: 0.001
+    weight_decay: 0.00001
+    momentum: 0.9
 # config for lr scheduler
 lr_scheduler:
   name: ConstantLRScheduler

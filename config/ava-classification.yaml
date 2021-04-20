@@ -12,6 +12,7 @@ trainer:
     epoch: 120
     gpu: !!python/list [ 0, 1 ]
     log_every: 5
+    num_workers: 8
 # config for dataset
 dataset:
   name: AVAAestheticClassificationDataset

@@ -44,7 +44,7 @@ def get_train_test_dataset(dataset_setting: Dict, train_transforms, test_transfo
 
 @TrainerFactory.register('ClassificationTrainer')
 class ClassificationTrainer:
-    def __init__(self, config: ConfigParser, run_dir, run_id, batch_size, epoch, gpu, log_every):
+    def __init__(self, config: ConfigParser, run_dir, run_id, batch_size, epoch, gpu, log_every, num_workers):
         self.config = config
         self.run_dir = run_dir
         self.run_id = run_id
@@ -52,6 +52,7 @@ class ClassificationTrainer:
         self.epoch = epoch
         self.gpu = gpu
         self.log_every = log_every
+        self.num_workers = num_workers
 
         # get the train transforms
         train_transforms = get_transforms(self.config.train_transforms)
@@ -65,8 +66,12 @@ class ClassificationTrainer:
         logging.info("Test dataset: \n%s" % test_dataset)
 
         # get the train/test loader
-        self.train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, pin_memory=True)
-        self.test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False, pin_memory=True)
+        self.train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size,
+                                       num_workers=self.num_workers,
+                                       shuffle=True, pin_memory=True)
+        self.test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size,
+                                      num_workers=self.num_workers,
+                                      shuffle=False, pin_memory=True)
 
         # get the model
         self.model = ModelFactory.instantiate(self.config.model)
