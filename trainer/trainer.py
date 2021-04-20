@@ -4,6 +4,8 @@ from torch.utils.data import DataLoader
 
 from typing import List, Dict
 from tqdm import tqdm
+import numpy as np
+import random
 
 from common.avg_meter import AvgMeter
 from common.logging import logging
@@ -44,15 +46,23 @@ def get_train_test_dataset(dataset_setting: Dict, train_transforms, test_transfo
 
 @TrainerFactory.register('ClassificationTrainer')
 class ClassificationTrainer:
-    def __init__(self, config: ConfigParser, run_dir, run_id, batch_size, epoch, gpu, log_every, num_workers):
+    def __init__(self, config: ConfigParser,
+                 run_dir, run_id,
+                 batch_size, num_workers,
+                 epoch, log_every,
+                 gpu, seed):
         self.config = config
         self.run_dir = run_dir
         self.run_id = run_id
         self.batch_size = batch_size
-        self.epoch = epoch
-        self.gpu = gpu
-        self.log_every = log_every
         self.num_workers = num_workers
+        self.epoch = epoch
+        self.log_every = log_every
+        self.gpu = gpu
+        self.seed = seed
+
+        # fix the seed for reproduction
+        self.set_seed()
 
         # get the train transforms
         train_transforms = get_transforms(self.config.train_transforms)
@@ -200,3 +210,10 @@ class ClassificationTrainer:
             'optimizer': self.optimizer.state_dict(),
             'scheduler': self.lr_scheduler.state_dict(),
         }, save_dir)
+
+    def set_seed(self):
+        seed = self.seed
+        random.seed(seed)
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)

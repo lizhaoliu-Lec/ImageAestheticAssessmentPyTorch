@@ -13,6 +13,7 @@ trainer:
     gpu: !!python/list [ 0, 1, 2, 3 ]
     log_every: 5
     num_workers: 8
+    seed: 1234
 # config for dataset
 dataset:
   name: AVAAestheticClassificationDataset
