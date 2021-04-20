@@ -15,6 +15,7 @@ class ConfigParser:
             config = yaml.load(f, Loader=yaml.FullLoader)
 
         self.config = config
+        self.now = str(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
         check_if_has_required_args(self.config,
                                    ['logger', 'trainer', 'dataset', 'model',
                                     'loss', 'optimizer', 'lr_scheduler',
@@ -90,8 +91,7 @@ class ConfigParser:
     def save_dir(self):
         _save_dir = join(self.trainer['params']['run_dir'],
                          self.dataset['name'],
-                         self.trainer['params']['run_id'] + '-' + str(
-                             datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")))
+                         self.trainer['params']['run_id'] + '-' + self.now)
         mkdirs_if_not_exist(_save_dir)
         return _save_dir
 
