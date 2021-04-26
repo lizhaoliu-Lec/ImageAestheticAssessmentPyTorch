@@ -25,6 +25,7 @@ model:
   params:
     resnet_name: resnet18
     stage: pretrained
+    bn_frozen: True
     pool_window: !!python/list [ 2, 2 ]
     fc_dims: !!python/list [ 256, 128 ]
     num_classes: 2

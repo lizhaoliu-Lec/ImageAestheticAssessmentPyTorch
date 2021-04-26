@@ -8,11 +8,14 @@ trainer:
   params:
     run_dir: runs
     run_id: unifiedNet-BinaryClassification
-    batch_size: 512
+#    batch_size: 512
+    batch_size: 256
     epoch: 120
     gpu: !!python/list [ 0, 1 ]
+#    gpu: !!python/list [ 2, 3 ]
     log_every: 5
-    num_workers: 8
+#    num_workers: 8
+    num_workers: 6
     seed: 1234
 # config for dataset
 dataset:
@@ -23,7 +26,7 @@ dataset:
 model:
   name: UnifiedNet
   params:
-    resnet_name: resnet18
+    resnet_name: resnet50
     stage: pretrained
     pool_window: !!python/list [ 2, 2 ]
     fc_dims: !!python/list [ 256, 128 ]
@@ -33,9 +36,12 @@ loss:
   name: CrossEntropyLoss
 # config for optimizer
 optimizer:
-  name: Adam
+  name: SGD
   params:
-    lr: 0.001
+#    lr: 0.001
+    lr: 0.00025
+    weight_decay: 0.00001
+    momentum: 0.9
 # config for lr scheduler
 lr_scheduler:
   name: ConstantLRScheduler
