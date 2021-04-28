@@ -162,8 +162,8 @@ class ClassificationTrainer:
                 # log to tensorboard
                 self.tensorboard.add_scalar('Train/Loss-Step', self.loss_meter.cur, global_step=self.global_step)
                 self.tensorboard.add_scalar('Train/Metric-Step', self.metric_meter.cur, global_step=self.global_step)
-                for lr in self.lr_scheduler.get_lr():
-                    self.tensorboard.add_scalar('Train/LR', lr, global_step=self.global_step)
+                for lr_id, lr in enumerate(self.lr_scheduler.get_lr()):
+                    self.tensorboard.add_scalar('Train/LR%d' % lr_id, lr, global_step=self.global_step)
 
             self.global_step += 1
 
