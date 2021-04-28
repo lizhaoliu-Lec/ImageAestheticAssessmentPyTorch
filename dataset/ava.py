@@ -21,6 +21,8 @@ Preprocess part:
 2) 7z x images.7z.001
 """
 import os
+
+import numpy as np
 from PIL import Image
 
 from torchvision.datasets import VisionDataset
@@ -183,7 +185,7 @@ class AVABaseDataset(VisionDataset):
                 assert len(line) == 15, 'Corrupted AVA.txt'
                 # index = line[0]
                 image_id = line[1]
-                counts = line[2:11]
+                counts = line[2:12]
                 semantic_ids = line[12:14]
                 challenge_id = line[14]
                 imageIds.append(image_id)
@@ -271,7 +273,7 @@ class AVAAestheticDistributionDataset(AVABaseDataset):
     def __init__(self, root, split='train', transforms=None):
         super().__init__(root=root, split=split, transforms=transforms)
         self._images = self.aesthetics_split
-        self._targets = {k: self.imageId2ava_contents[k]['count_distribution'] for k in
+        self._targets = {k: np.array(self.imageId2ava_contents[k]['count_distribution']).astype(np.float32) for k in
                          self.imageId2ava_contents.keys()}
 
 
