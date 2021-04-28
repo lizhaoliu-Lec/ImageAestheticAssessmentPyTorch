@@ -7,7 +7,7 @@ paper reference: https://openaccess.thecvf.com/content_ICCV_2019/papers/Lee_Imag
 import torch
 import torch.nn as nn
 
-from model.resnet_based import ResNetBase
+from model.base import get_base
 from model.factory import ModelFactory
 
 __all__ = ['UnifiedNet']
@@ -35,28 +35,32 @@ class GlobalAndLocalPooling(nn.Module):
 
 
 @ModelFactory.register('UnifiedNet')
-class UnifiedNet(ResNetBase):
+class UnifiedNet(nn.Module):
     def __init__(self,
+                 base_name='resnet50',
                  stage='pretrained',
                  pool_window=(2, 2),
                  fc_dims=(1024, 256),
                  num_classes=2,
                  **kwargs):
-        super().__init__(**kwargs)
+        super().__init__()
         assert stage in ['pretrained', 'finetune']
+        self.base = get_base(base_name=base_name, **kwargs)
+        self.head = self.get_head(pool_window, fc_dims, num_classes)
+
         self.stage = stage
-        self.global_and_local_pool = GlobalAndLocalPooling(pool_window)
-        in_dim = self.last_dim * (pool_window[0] * pool_window[1] + 1)
-        self.fc1 = nn.Linear(in_features=in_dim, out_features=fc_dims[0])
-        self.fc2 = nn.Linear(in_features=fc_dims[0], out_features=fc_dims[1])
-        self.classification = nn.Linear(in_features=fc_dims[1], out_features=num_classes)
+
+    def get_head(self, pool_window, fc_dims, num_classes):
+        in_dim = self.base.last_dim * (pool_window[0] * pool_window[1] + 1)
+
+        global_and_local_pool = GlobalAndLocalPooling(pool_window)
+        fc1 = nn.Linear(in_features=in_dim, out_features=fc_dims[0])
+        fc2 = nn.Linear(in_features=fc_dims[0], out_features=fc_dims[1])
+        fc3 = nn.Linear(in_features=fc_dims[1], out_features=num_classes)
+        return nn.Sequential(global_and_local_pool, fc1, fc2, fc3)
 
     def forward(self, x):
-        x = super().forward(x)
-        x = self.global_and_local_pool(x)
-        x = self.relu(self.fc1(x))
-        x = self.relu(self.fc2(x))
-        return self.classification(x)
+        return self.head(self.base(x))
 
 
 if __name__ == '__main__':

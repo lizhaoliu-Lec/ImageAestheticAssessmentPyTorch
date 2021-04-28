@@ -50,7 +50,8 @@ class ClassificationTrainer:
                  run_dir, run_id,
                  batch_size, num_workers,
                  epoch, log_every,
-                 gpu, seed):
+                 gpu, seed,
+                 base_lr=None, head_lr=None):
         self.config = config
         self.run_dir = run_dir
         self.run_id = run_id
@@ -60,6 +61,8 @@ class ClassificationTrainer:
         self.log_every = log_every
         self.gpu = gpu
         self.seed = seed
+        self.base_lr = base_lr
+        self.head_lr = head_lr
 
         # fix the seed for reproduction
         self.set_seed()
@@ -95,7 +98,12 @@ class ClassificationTrainer:
 
         # get the optimizer
         logging.info("Using optimizer: %s" % self.config.get_name_with_params(self.config.optimizer))
-        self.config.optimizer['params']['params'] = self.model.parameters()
+        if self.base_lr is not None and self.head_lr is not None:
+            logging.info("Using different learning rate for base (%.4f) and head (%.4f)" % (self.base_lr, self.head_lr))
+            self.config.optimizer['params']['params'] = [{'params': self.model.base.parameters(), 'lr': self.base_lr},
+                                                         {'params': self.model.head.parameters(), 'lr': self.head_lr}]
+        else:
+            self.config.optimizer['params']['params'] = self.model.parameters()
         self.optimizer = OptimizerFactory.instantiate(self.config.optimizer)
         self.config.optimizer['params'].pop('params')
 
@@ -150,11 +158,12 @@ class ClassificationTrainer:
             loss.backward()
             self.optimizer.step()
 
-            # log to tensorboard
-            self.tensorboard.add_scalar('Train/Loss-Step', self.loss_meter.cur, global_step=self.global_step)
-            self.tensorboard.add_scalar('Train/Metric-Step', self.metric_meter.cur, global_step=self.global_step)
-            for lr in self.lr_scheduler.get_lr():
-                self.tensorboard.add_scalar('Train/LR', lr, global_step=self.global_step)
+            if self.global_step % self.log_every == 0:
+                # log to tensorboard
+                self.tensorboard.add_scalar('Train/Loss-Step', self.loss_meter.cur, global_step=self.global_step)
+                self.tensorboard.add_scalar('Train/Metric-Step', self.metric_meter.cur, global_step=self.global_step)
+                for lr in self.lr_scheduler.get_lr():
+                    self.tensorboard.add_scalar('Train/LR', lr, global_step=self.global_step)
 
             self.global_step += 1
 

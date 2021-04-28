@@ -17,3 +17,8 @@ class MultiStepLR(torch.optim.lr_scheduler.MultiStepLR):
 @LRSchedulerFactory.register('ExponentialLR')
 class ExponentialLR(torch.optim.lr_scheduler.ExponentialLR):
     ...
+
+
+@LRSchedulerFactory.register('StepLR')
+class StepLR(torch.optim.lr_scheduler.StepLR):
+    ...
