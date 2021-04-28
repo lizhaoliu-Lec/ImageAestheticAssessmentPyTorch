@@ -25,3 +25,4 @@ Note that this is a work in process.
 Approach to Score Regression, Binary Classification, and Personalization (*In Progress*)
 - [PAC-Net](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8451621) PAC-NET: PAIRWISE AESTHETIC COMPARISON NETWORK FOR IMAGE AESTHETIC
 ASSESSMENT (*TODO*)
+- [NIMA](https://arxiv.org/pdf/1709.05424) NIMA: Neural Image Assessment
