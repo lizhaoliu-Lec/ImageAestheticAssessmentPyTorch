@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch.nn.functional as F
 
 from torchvision.models import resnet18
 from torchvision.models import resnet34
@@ -33,7 +34,7 @@ class ResNetBase(nn.Module):
             logging.info("The BN in ResNetBase is frozen")
             freeze_bn(self)
 
-    def forward(self, x):
+    def forward(self, x, pool=False):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -43,6 +44,9 @@ class ResNetBase(nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
+        if pool:
+            N, c = x.size(0), x.size(1)
+            x = F.adaptive_avg_pool2d(x, (1, 1)).reshape((N, c))
         return x
 
 

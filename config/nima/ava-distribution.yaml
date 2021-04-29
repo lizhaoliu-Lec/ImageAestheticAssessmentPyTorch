@@ -14,8 +14,8 @@ trainer:
     log_every: 5
     num_workers: 6
     seed: 1234
-    base_lr: 0.005
-    head_lr: 0.0005
+#    base_lr: 0.0005
+#    head_lr: 0.005
 # config for dataset
 dataset:
   name: AVAAestheticDistributionDataset
@@ -25,7 +25,7 @@ dataset:
 model:
   name: NIMA
   params:
-    base_name: vgg11
+    base_name: resnet18
     num_classes: 10
 # config for loss function
 loss:
@@ -37,7 +37,7 @@ optimizer:
   name: SGD
   params:
     lr: 0.005
-    weight_decay: 0
+    weight_decay: 0.00001
     momentum: 0.9
 # config for lr scheduler
 lr_scheduler:

@@ -18,6 +18,7 @@ class NIMA(nn.Module):
                  drop_rate=0.75,
                  **kwargs):
         super().__init__()
+        self.base_name = base_name
         self.base = get_base(base_name, **kwargs)
         self.head = nn.Sequential(
             nn.Dropout(p=drop_rate),
@@ -25,7 +26,11 @@ class NIMA(nn.Module):
             nn.Softmax(dim=-1))
 
     def forward(self, x):
-        return self.head(self.base(x))
+        if 'resnet' in self.base_name:
+            x = self.base(x, pool=True)
+        else:
+            x = self.base(x)
+        return self.head(x)
 
 
 if __name__ == '__main__':
