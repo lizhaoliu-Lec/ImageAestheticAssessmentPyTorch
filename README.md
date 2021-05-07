@@ -18,7 +18,8 @@ Note that this is a work in process.
     - meaningful attributes assigned to each image (*TODO*)
 - [CHAED](https://www.ijcai.org/Proceedings/15/Papers/356.pdf) A chinese handwriting aesthetic evaluation database
     - 1000 Chinese handwriting images 
-    - diverse aesthetic qualities for each image (rated by 33 subjects) (*TODO*)
+    - diverse aesthetic qualities for each image from three level
+    - rated by 33 subjects
 
 ## Supported Models
 - [Unified Net](https://openaccess.thecvf.com/content_ICCV_2019/papers/Lee_Image_Aesthetic_Assessment_Based_on_Pairwise_Comparison__A_Unified_ICCV_2019_paper.pdf) Image Aesthetic Assessment Based on Pairwise Comparison – A Unified
