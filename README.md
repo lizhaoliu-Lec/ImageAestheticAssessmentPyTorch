@@ -28,6 +28,6 @@ ASSESSMENT (*TODO*)
 - [NIMA](https://arxiv.org/pdf/1709.05424) NIMA: Neural Image Assessment
 
 ## How to use
-'''
+```bash
 python -u train.py --config path/to/your/config
-'''
+```
