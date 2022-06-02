@@ -5,6 +5,8 @@ from common.logging import logging
 
 def get_base(base_name, **kwargs):
     logging.info("Using base: %s" % base_name)
+    if 'base_name' in kwargs:
+        kwargs.pop('base_name')
     if 'resnet' in base_name:
         return ResNetBase(resnet_name=base_name, **kwargs)
     if 'vgg' in base_name:
