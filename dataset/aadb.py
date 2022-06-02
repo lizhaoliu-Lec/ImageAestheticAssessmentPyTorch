@@ -178,16 +178,34 @@ if __name__ == '__main__':
 
         for train_id, test_id in zip(train_ids[:num], test_ids[:num]):
             image, target = d_train[train_id]
-            plt.subplot(121)
+            image_train = image.resize((1024, 1024))
+            plt.subplot(311)
             plt.axis('off')
-            plt.imshow(image)
+            plt.imshow(image_train)
             plt.title("{0} Train\n Label: {1}".format(AADBDataset.__name__, target))
             plt.tight_layout()
             image, target = d_test[test_id]
-            plt.subplot(122)
+            image_test = image.resize((1024, 1024))
+            plt.subplot(312)
+            plt.axis('off')
+            plt.imshow(image_test)
+            plt.title("{0} Test\n Label: {1}".format(AADBDataset.__name__, target))
+
+            lambda_ = 0.4
+            import numpy as np
+            # print("===> image_train.size ", image_train.size)
+            # print("===> image_test.size ", image_test.size)
+            # image_train = image_train.resize((1024, 1024))
+            # image_test = image_test.resize((1024, 1024))
+            # print("===> image_train.size ", image_train.size)
+            # print("===> image_test.size ", image_test.size)
+            image = lambda_ * np.asarray(image_train) + (1 - lambda_) * np.asarray(image_test)
+            image = (image - np.min(image)) / (np.max(image) - np.min(image))
+            plt.subplot(313)
             plt.axis('off')
             plt.imshow(image)
-            plt.title("{0} Test\n Label: {1}".format(AADBDataset.__name__, target))
+            plt.title("{0} Mixed with lambda: {1}".format(AADBDataset.__name__, lambda_))
+
             plt.tight_layout()
             plt.show()
             plt.close()
