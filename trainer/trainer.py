@@ -7,6 +7,7 @@ from tqdm import tqdm
 import numpy as np
 import random
 
+from common import PROJECT_NAME
 from common.avg_meter import AvgMeter
 from common.logging import logging
 from common.tensorboard import Tensorboard
@@ -75,8 +76,8 @@ class ClassificationTrainer:
         train_dataset, test_dataset = get_train_test_dataset(self.config.dataset,
                                                              train_transforms=train_transforms,
                                                              test_transforms=test_transforms)
-        logging.info("Training dataset: \n%s" % train_dataset)
-        logging.info("Test dataset: \n%s" % test_dataset)
+        logger.info("Training dataset: \n%s" % train_dataset)
+        logger.info("Test dataset: \n%s" % test_dataset)
 
         # get the train/test loader
         self.train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size,
@@ -97,9 +98,9 @@ class ClassificationTrainer:
                 self.model.cuda(get_gpu_device(self.gpu[0]))
 
         # get the optimizer
-        logging.info("Using optimizer: %s" % self.config.get_name_with_params(self.config.optimizer))
+        logger.info("Using optimizer: %s" % self.config.get_name_with_params(self.config.optimizer))
         if self.base_lr is not None and self.head_lr is not None:
-            logging.info("Using different learning rate for base (%.4f) and head (%.4f)" % (self.base_lr, self.head_lr))
+            logger.info("Using different learning rate for base (%.4f) and head (%.4f)" % (self.base_lr, self.head_lr))
             self.config.optimizer['params']['params'] = [{'params': self.model.base.parameters(), 'lr': self.base_lr},
                                                          {'params': self.model.head.parameters(), 'lr': self.head_lr}]
         else:
@@ -108,30 +109,30 @@ class ClassificationTrainer:
         self.config.optimizer['params'].pop('params')
 
         # get the scheduler
-        logging.info("Using lr scheduler: %s" % self.config.get_name_with_params(self.config.lr_scheduler))
+        logger.info("Using lr scheduler: %s" % self.config.get_name_with_params(self.config.lr_scheduler))
         self.config.lr_scheduler['params']['optimizer'] = self.optimizer
         self.lr_scheduler = LRSchedulerFactory.instantiate(self.config.lr_scheduler)
         self.config.lr_scheduler['params'].pop('optimizer')
 
         # get the loss function
-        logging.info("Using loss: %s" % self.config.get_name_with_params(self.config.loss))
+        logger.info("Using loss: %s" % self.config.get_name_with_params(self.config.loss))
         self.loss = LossFactory.instantiate(self.config.loss)
         self.loss_meter = AvgMeter()
 
         # get the metric
-        logging.info("Using metric: %s" % self.config.get_name_with_params(self.config.metric))
+        logger.info("Using metric: %s" % self.config.get_name_with_params(self.config.metric))
         self.metric = MetricFactory.instantiate(self.config.metric)
         self.metric_meter = AvgMeter()
 
         # get the tensorboard
-        logging.info("Saving tensorboard file to path: %s" % self.config.save_dir)
+        logger.info("Saving tensorboard file to path: %s" % self.config.save_dir)
         self.tensorboard = Tensorboard(logdir=self.config.save_dir)
 
         self.global_step = 0
         self.best_metric = -1
 
     def train(self):
-        logging.info("Start training...")
+        logger.info("Start training...")
         for epoch in range(1, self.epoch + 1):
             self.train_one_epoch(epoch)
 
@@ -168,7 +169,8 @@ class ClassificationTrainer:
             self.global_step += 1
 
     def train_one_epoch(self, epoch):
-        logging.info("Start training for epoch: %d" % epoch)
+        logger = logging.getLogger(PROJECT_NAME)
+        logger.info("Start training for epoch: %d" % epoch)
 
         self.optimizer.step()  # In PyTorch 1.1.0 and later,
         self.lr_scheduler.step(epoch=epoch)
@@ -177,26 +179,27 @@ class ClassificationTrainer:
 
         self.tensorboard.add_scalar('Train/Loss-Epoch', self.loss_meter.avg, global_step=epoch)
         self.tensorboard.add_scalar('Train/Metric-Epoch', self.metric_meter.avg, global_step=epoch)
-        logging.info("Train (Epoch %d): [Loss-Epoch: %.4f] | [Metric-Epoch: %.4f]" % (epoch,
-                                                                                      self.loss_meter.avg,
-                                                                                      self.metric_meter.avg))
+        logger.info("Train (Epoch %d): [Loss-Epoch: %.4f] | [Metric-Epoch: %.4f]" % (epoch,
+                                                                                     self.loss_meter.avg,
+                                                                                     self.metric_meter.avg))
         self.loss_meter.reset()
         self.metric_meter.reset()
 
-        logging.info("End training for epoch: %d" % epoch)
+        logger.info("End training for epoch: %d" % epoch)
 
     @torch.no_grad()
     def test(self, epoch):
-        logging.info("Start test for epoch: %d" % epoch)
+        logger = logging.getLogger(PROJECT_NAME)
+        logger.info("Start test for epoch: %d" % epoch)
 
         for x, target in tqdm(self.test_loader):
             self.step(x, target, train=False)
 
         self.tensorboard.add_scalar('Test/Loss-Epoch', self.loss_meter.avg, global_step=epoch)
         self.tensorboard.add_scalar('Test/Metric-Epoch', self.metric_meter.avg, global_step=epoch)
-        logging.info("Test (Epoch %d): [Loss-Epoch: %.4f] | [Metric-Epoch: %.4f]" % (epoch,
-                                                                                     self.loss_meter.avg,
-                                                                                     self.metric_meter.avg))
+        logger.info("Test (Epoch %d): [Loss-Epoch: %.4f] | [Metric-Epoch: %.4f]" % (epoch,
+                                                                                    self.loss_meter.avg,
+                                                                                    self.metric_meter.avg))
 
         self.save_checkpoint(epoch, self.metric_meter.avg, self.metric_meter.avg > self.best_metric)
 
@@ -206,12 +209,14 @@ class ClassificationTrainer:
         self.loss_meter.reset()
         self.metric_meter.reset()
 
-        logging.info("End test for epoch: %d" % epoch)
+        logger.info("End test for epoch: %d" % epoch)
 
     def save_checkpoint(self, epoch, metric, is_best):
+        logger = logging.getLogger(PROJECT_NAME)
+
         save_dir = join(self.config.save_dir, 'best_model.bin' if is_best else 'latest_model.bin')
         if is_best:
-            logging.info("** Saving the best model to %s with metric: %.4f" % (save_dir, metric))
+            logger.info("** Saving the best model to %s with metric: %.4f" % (save_dir, metric))
         torch.save({
             'epoch': epoch,
             'metric': metric,

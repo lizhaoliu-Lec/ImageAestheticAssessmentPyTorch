@@ -10,7 +10,7 @@ trainer:
     run_id: unifiedNet-BinaryClassification
     batch_size: 256
     epoch: 120
-    gpu: !!python/list [ 2, 3 ]
+    gpu: !!python/list [ 0, 1 ]
     log_every: 5
     num_workers: 6
     seed: 1234
@@ -23,7 +23,7 @@ dataset:
 model:
   name: UnifiedNet
   params:
-    base_name: resnet18
+    base_name: resnet50
     stage: pretrained
     pool_window: !!python/list [ 2, 2 ]
     fc_dims: !!python/list [ 256, 128 ]

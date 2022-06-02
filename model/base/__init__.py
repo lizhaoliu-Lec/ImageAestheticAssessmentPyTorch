@@ -1,10 +1,13 @@
+from common import PROJECT_NAME
 from .resnet_base import ResNetBase
 from .vgg_base import VGGBase
 from common.logging import logging
 
 
 def get_base(base_name, **kwargs):
-    logging.info("Using base: %s" % base_name)
+    logger = logging.getLogger(PROJECT_NAME)
+
+    logger.info("Using base: {}".format(base_name))
     if 'base_name' in kwargs:
         kwargs.pop('base_name')
     if 'resnet' in base_name:

@@ -28,17 +28,22 @@ model:
     pool_window: !!python/list [ 2, 2 ]
     fc_dims: !!python/list [ 256, 128 ]
     num_classes: 3
+    freeze_base: True
 # config for loss function
 loss:
   name: CrossEntropyLoss
 # config for optimizer
 optimizer:
-  name: SGD
+#  name: SGD
+#  params:
+#    lr: 0.001
+##    lr: 0.00025
+#    weight_decay: 0.00001
+#    momentum: 0.9
+  name: Adam
   params:
     lr: 0.001
-#    lr: 0.00025
     weight_decay: 0.00001
-    momentum: 0.9
 # config for lr scheduler
 lr_scheduler:
   name: ConstantLRScheduler

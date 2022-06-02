@@ -1,6 +1,8 @@
 import os
 import yaml
 from typing import Dict, List
+
+from common import PROJECT_NAME
 from common.utils import check_if_file_exists, check_if_has_required_args, mkdirs_if_not_exist, join
 from common.logging import set_logging
 import logging
@@ -43,15 +45,17 @@ class ConfigParser:
         self.test_transforms = self.config['test_transforms']
 
         # init the logger
-        set_logging(level=self.logger['level'], name=self.logger['name'])
+        set_logging(level=self.logger['level'], name=PROJECT_NAME)
+
+        logger = logging.getLogger(PROJECT_NAME)
 
         # print the config file
-        logging.info("Using the following configuration: \n%s" % pformat(config))
-        logging.info("Saving the training result to: %s" % self.save_dir)
+        logger.info("Using the following configuration: \n%s" % pformat(config))
+        logger.info("Saving the training result to: %s" % self.save_dir)
 
         # save the config file
         self.save_config(self.save_dir, os.path.basename(config_path), config)
-        logging.info("Saving the config file to: %s" % self.save_dir)
+        logger.info("Saving the config file to: %s" % self.save_dir)
 
         # set gpu environment
         self.set_gpu(self.trainer)

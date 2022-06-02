@@ -10,7 +10,7 @@ trainer:
     run_id: nima-distribution
     batch_size: 256
     epoch: 120
-    gpu: !!python/list [ 0, 1 ]
+    gpu: !!python/list [ 2, 3 ]
     log_every: 5
     num_workers: 6
     seed: 1234
@@ -25,7 +25,7 @@ dataset:
 model:
   name: NIMA
   params:
-    base_name: resnet18
+    base_name: resnet50
     num_classes: 10
 # config for loss function
 loss:
