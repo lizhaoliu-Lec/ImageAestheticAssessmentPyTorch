@@ -9,6 +9,7 @@ import torch.nn as nn
 
 from model.base import get_base
 from model.factory import ModelFactory
+from model.utils import freeze_weights, name_size_grad
 
 __all__ = ['UnifiedNet']
 
@@ -42,11 +43,15 @@ class UnifiedNet(nn.Module):
                  pool_window=(2, 2),
                  fc_dims=(1024, 256),
                  num_classes=2,
+                 freeze_base=False,
                  **kwargs):
         super().__init__()
         assert stage in ['pretrained', 'finetune']
         self.base = get_base(base_name=base_name, **kwargs)
         self.head = self.get_head(pool_window, fc_dims, num_classes)
+
+        if freeze_base:
+            freeze_weights(self.base)
 
         self.stage = stage
 
@@ -64,25 +69,14 @@ class UnifiedNet(nn.Module):
 
 
 if __name__ == '__main__':
-    def run_local_pooling():
-        x = torch.randn((5, 3, 224, 224)).cuda()
-        model = ResNetBase().cuda()
-        local_pool = GlobalAndLocalPooling((2, 2)).cuda()
-        out = model(x)
-        pool_out = local_pool(out)
-
-        print("===> x.size() ", x.size())
-        print("===> out.size() ", out.size())
-        print("===> pool_out.size() ", pool_out.size())
-
-
     def run_UnifiedNet():
         x = torch.randn((5, 3, 224, 224)).cuda()
-        model = UnifiedNet().cuda()
+        model = UnifiedNet(freeze_base=True).cuda()
         print(model)
         out = model(x)
         print("===> x.size() ", x.size())
         print("===> pool_out.size() ", out.size())
+        name_size_grad(model)
 
 
     # run_local_pooling()
