@@ -1,0 +1,76 @@
+# config for logger
+logger:
+  level: INFO
+  name: IAAPyTorch
+# config for trainer
+trainer:
+  name: ClassificationTrainer
+  params:
+    run_dir: runs
+    run_id: unifiedNet-BinaryClassification
+    batch_size: 256
+    epoch: 120
+    gpu: !!python/list [ 4,5 ]
+    log_every: 5
+    num_workers: 6
+    seed: 1234
+# config for dataset
+dataset:
+  name: AVAAestheticClassificationDataset
+  params:
+    root: /mnt/cephfs/dataset/AVA_dataset
+# config for model
+model:
+  name: UnifiedNet
+  params:
+    base_name: resnet50
+    stage: pretrained
+    pool_window: !!python/list [ 2, 2 ]
+    fc_dims: !!python/list [ 256, 128 ]
+    num_classes: 2
+# config for loss function
+loss:
+  name: CrossEntropyLoss
+# config for optimizer
+optimizer:
+  name: SGD
+  params:
+#    lr: 0.001
+    lr: 0.00025
+    weight_decay: 0.00001
+    momentum: 0.9
+# config for lr scheduler
+lr_scheduler:
+  name: ConstantLRScheduler
+# config for metric
+metric:
+  name: Accuracy
+# config for training transformation
+train_transforms:
+  - name: Scale
+    params:
+      size: 256
+  - name: RandomFiveCrop
+    params:
+      size: 224
+  - name: RandomHorizontalFlip
+    params:
+      p: 0.5
+  - name: ToTensor
+  - name: Normalize
+    params:
+      mean: !!python/list [ 0.485, 0.456, 0.406 ]
+      std: !!python/list [ 0.229, 0.224, 0.225 ]
+# config for test transformation
+test_transforms:
+  - name: Scale
+    params:
+      size: 256
+  - name: CenterCrop
+    params:
+      size: 224
+  - name: ToTensor
+  - name: Normalize
+    params:
+      mean: !!python/list [ 0.485, 0.456, 0.406 ]
+      std: !!python/list [ 0.229, 0.224, 0.225 ]
