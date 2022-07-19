@@ -84,5 +84,3 @@ test_transforms:
     params:
       mean: !!python/list [ 0.485, 0.456, 0.406 ]
       std: !!python/list [ 0.229, 0.224, 0.225 ]
-
-#save_dir: /mnt/cephfs/home/yehh/IAAPyTorch/save_dir
