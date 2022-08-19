@@ -6,6 +6,9 @@ from lr_scheduler import LRSchedulerFactory
 @LRSchedulerFactory.register('ConstantLRScheduler')
 class ConstantLRScheduler(torch.optim.lr_scheduler._LRScheduler):
     def get_lr(self):
+        return self.get_last_lr()
+
+    def get_last_lr(self):
         return [group['lr'] for group in self.optimizer.param_groups]
 
 

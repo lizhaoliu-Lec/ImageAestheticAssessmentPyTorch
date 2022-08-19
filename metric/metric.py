@@ -15,7 +15,27 @@ class Accuracy:
 class MAE:
     @torch.no_grad()
     def __call__(self, prediction, target):
-        return F.l1_loss(prediction, target).item()
+        # for maximize the metric
+        return -1. * F.l1_loss(prediction, target).item()
+
+
+@MetricFactory.register('CHAEDMAE')
+class CHAEDMAE:
+    @torch.no_grad()
+    def __call__(self, prediction, target):
+        # for maximize the metric
+        # input: (N, 3), target: (N)
+        assert prediction.size()[1] == 3
+        reg_prediction = 100. * prediction[:, 0] + 50. * prediction[:, 1] + 0. * prediction[:, 2]
+        return -1. * F.l1_loss(reg_prediction, target).item()
+
+
+@MetricFactory.register('MSE')
+class MSE:
+    @torch.no_grad()
+    def __call__(self, prediction, target):
+        # for maximize the metric
+        return -1. * F.mse_loss(prediction, target).item()
 
 
 @MetricFactory.register('AccuracyFromDistribution')
@@ -34,6 +54,24 @@ class AccuracyFromDistribution:
     def __call__(self, prediction, target):
         prediction_label = self.get_score_from_distribution(prediction) > self.cut_off
         target_label = self.get_score_from_distribution(target) > self.cut_off
+        return torch.mean((prediction_label == target_label).float()).item()
+
+
+@MetricFactory.register('AccuracyFromDistributionV2')
+class AccuracyFromDistributionV2:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def get_score_from_distribution(distribution: torch.Tensor):
+        # distribution: (N, num_classes)
+        N, num_classes = distribution.size()
+        return torch.argmax(distribution, 1)
+
+    @torch.no_grad()
+    def __call__(self, prediction, target):
+        prediction_label = self.get_score_from_distribution(prediction)
+        target_label = self.get_score_from_distribution(target)
         return torch.mean((prediction_label == target_label).float()).item()
 
 

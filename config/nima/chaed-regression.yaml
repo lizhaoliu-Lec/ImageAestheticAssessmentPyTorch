@@ -1,0 +1,83 @@
+# config for logger
+logger:
+  level: INFO
+  name: IAAPyTorch
+# config for trainer
+trainer:
+  name: ClassificationTrainer
+  params:
+    run_dir: runs
+    run_id: nima-regression_wd5e-4_lr1e-4_bs64_step40_gamma1e-1_huber_noPretrained_linearConv1
+#    run_id: nima-regression_freezeBN_wd5e-4_lr1e-4_constant_bs64_huber_d2Pretrainedhw
+    batch_size: 64
+    epoch: 120
+    gpu: !!python/list [ 4 ]
+    log_every: 5
+    num_workers: 6
+#    seed: 1234
+    seed: 1111
+#    base_lr: 0.0005
+#    head_lr: 0.005
+# config for dataset
+dataset:
+  name: CHAERegressionDataset
+  params:
+    root: /home/liulizhao/dataset/CHAED
+# config for model
+model:
+  name: NIMA
+  params:
+    base_name: resnet50
+    pretrained: False
+    num_classes: 3
+    bn_frozen: False
+    freeze_list: !!python/list ['layer1', 'layer2', 'layer3', 'layer4']
+#    load_from_d2: /home/liulizhao/dataset/SIS_exp/liulizhao/mask_rcnn_R_50_FPN_3x_kaiti/20220805.001225/model_0214999.pth
+#    load_from_d2: /home/liulizhao/dataset/SIS_exp/liulizhao/mask_rcnn_R_50_FPN_3x_handwritten/20220805.001734/model_0239999.pth
+#    layer3_feat: True
+# config for loss function
+loss:
+  name: CHAEDSmoothL1Loss
+# config for optimizer
+optimizer:
+  name: SGD
+  params:
+    lr: 0.0001
+    weight_decay: 0.01
+#    momentum: 0.9
+# config for lr scheduler
+lr_scheduler:
+#  name: ConstantLRScheduler
+  name: StepLR
+  params:
+    step_size: 40
+    gamma: 0.1
+# config for metric
+metric:
+  name: CHAEDMAE
+# config for training transformation
+train_transforms:
+  - name: Scale
+    params:
+      size: 256
+  - name: RandomFiveCrop
+    params:
+      size: 224
+  - name: ToTensor
+  - name: Normalize
+    params:
+      mean: !!python/list [ 0.485, 0.456, 0.406 ]
+      std: !!python/list [ 0.229, 0.224, 0.225 ]
+# config for test transformation
+test_transforms:
+  - name: Scale
+    params:
+      size: 256
+  - name: CenterCrop
+    params:
+      size: 224
+  - name: ToTensor
+  - name: Normalize
+    params:
+      mean: !!python/list [ 0.485, 0.456, 0.406 ]
+      std: !!python/list [ 0.229, 0.224, 0.225 ]

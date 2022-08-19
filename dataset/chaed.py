@@ -9,7 +9,7 @@ We invited users to
 through the website http://59.108.48.27/eval.
 In "Aesthetic Visual Quality Evaluation of Chinese Handwritings", for every character,
 5) the odd number of images are used to train the ANN and
-6) the even number of images are used to test it.
+6) the  number of images are used to test it.
 That's to say, 001.jpg, 003.jpg, 005.jpg, 007.jpg, 009.jpg are the training set and
 002.jpg, 004.jpg, 006.jpg, 008.jpg, 010.jpg are the test set.
 """
@@ -188,7 +188,8 @@ class CHAEDDistributionDataset(CHAEDBaseDataset):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._targets = self.charID_to_distribution
+        self._targets = {k: np.array(self.charID_to_distribution[k]).astype(np.float32) for k in
+                         self.charID_to_distribution.keys()}
 
 
 @DatasetFactory.register('CHAERegressionDataset')
@@ -199,19 +200,27 @@ class CHAERegressionDataset(CHAEDBaseDataset):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._targets = self.charID_to_avg_score
+        self._targets = {k: np.array(self.charID_to_avg_score[k]).astype(np.float32) for k in
+                         self.charID_to_avg_score.keys()}
 
 
 if __name__ == '__main__':
+    DATASET_ROOT = '/home/liulizhao/dataset/CHAED'
+
+
     def run_chaed():
-        d = CHAEDBaseDataset(root='/home/liulizhao/datasets/CHAED', split='test')
-        print("===> d ", d)
+        d = CHAEDBaseDataset(root=DATASET_ROOT, split='test')
+        print("===> d test", d)
+        d = CHAEDBaseDataset(root=DATASET_ROOT, split='train')
+        print("===> d train", d)
+        # d = CHAEDBaseDataset(root=DATASET_ROOT, split='val')
+        # print("===> d val", d)
 
 
     def run_CHAEDDataset(CHAEDDataset, _break=True):
         from tqdm import tqdm
-        d_train = CHAEDDataset(root='/home/liulizhao/datasets/CHAED', split='train')
-        d_test = CHAEDDataset(root='/home/liulizhao/datasets/CHAED', split='test')
+        d_train = CHAEDDataset(root=DATASET_ROOT, split='train')
+        d_test = CHAEDDataset(root=DATASET_ROOT, split='test')
 
         print("===> Train: \n", d_train)
         print("===> Test: \n", d_test)
@@ -223,7 +232,7 @@ if __name__ == '__main__':
                 if _break:
                     print("===> image: ", image.size)
                     print("===> target: ", target)
-                    # break
+                    break
 
 
     def run_all_dataset():
@@ -236,8 +245,8 @@ if __name__ == '__main__':
     def visualize_CHAEDDataset(CHAEDDataset, num=3):
         from random import shuffle
         import matplotlib.pyplot as plt
-        d_train = CHAEDDataset(root='/home/liulizhao/datasets/CHAED', split='train')
-        d_test = CHAEDDataset(root='/home/liulizhao/datasets/CHAED', split='test')
+        d_train = CHAEDDataset(root=DATASET_ROOT, split='train')
+        d_test = CHAEDDataset(root=DATASET_ROOT, split='test')
 
         train_ids = list(range(len(d_train)))
         test_ids = list(range(len(d_test)))
@@ -277,6 +286,47 @@ if __name__ == '__main__':
         visualize_CHAEDDataset(CHAERegressionDataset, 3)
 
 
+    def visualize_hw_histogram():
+        from tqdm import tqdm
+        import matplotlib.pyplot as plt
+
+        BINS = 20
+
+        def print_stat(_l, name):
+            assert len(_l) > 0
+            print("===> For {}, max: {}. mean: {}. min: {}".format(
+                name, max(_l), sum(_l) / len(_l), min(_l)
+            ))
+
+        d1 = CHAEDClassificationDataset(root=DATASET_ROOT, split='test')
+        print("===> d test", d1)
+        d2 = CHAEDClassificationDataset(root=DATASET_ROOT, split='train')
+        print("===> d train", d2)
+        hs, ws = [], []
+        for d in [d1, d2]:
+            for image, target in tqdm(d):
+                h, w = image.size
+                hs.append(h)
+                ws.append(w)
+
+        print_stat(hs, "hs")
+        print_stat(ws, "ws")
+
+        plt.subplot(121)
+        plt.hist(hs, bins=BINS)
+        plt.title("hs histogram")
+        plt.tight_layout()
+
+        plt.subplot(122)
+        plt.hist(ws, bins=BINS)
+        plt.title("ws histogram")
+        plt.tight_layout()
+
+        plt.show()
+        plt.close()
+
+
     # run_chaed()
-    run_all_dataset()
+    # run_all_dataset()
     # visualize_all_dataset()
+    visualize_hw_histogram()

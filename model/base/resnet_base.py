@@ -1,3 +1,5 @@
+import os.path
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -7,7 +9,8 @@ from torchvision.models import resnet50
 from torchvision.models import resnet101
 from torchvision.models import resnet152
 
-from model.utils import freeze_bn, name_size_grad
+from common import PROJECT_NAME
+from model.utils import freeze_bn, name_size_grad, freeze_weights
 
 import logging
 
@@ -19,7 +22,22 @@ class ResNetBase(nn.Module):
     }
 
     def __init__(self, resnet_name='resnet50', pretrained=True, bn_frozen=False, **kwargs):
+        logger = logging.getLogger(PROJECT_NAME)
         super().__init__()
+
+        d2_path = None
+        if 'load_from_d2' in kwargs:
+            d2_path = kwargs.pop('load_from_d2')
+
+        self.freeze_list = []
+        if 'freeze_list' in kwargs:
+            self.freeze_list = kwargs['freeze_list']
+            kwargs.pop('freeze_list')
+            for _ in self.freeze_list:
+                assert _ in ['conv1', 'layer1', 'layer2', 'layer3', 'layer4']
+
+        if pretrained:
+            logging.info("Using ImageNet Pretrained Parameters for model training")
         resnet = self.NAME_2_RESNET[resnet_name](pretrained=pretrained, **kwargs)
         self.conv1 = resnet.conv1
         self.bn1 = resnet.bn1
@@ -30,9 +48,29 @@ class ResNetBase(nn.Module):
         self.layer3 = resnet.layer3
         self.layer4 = resnet.layer4
         self.last_dim = 512 if resnet_name in ['resnet18', 'resnet34'] else 2048
+
+        if d2_path is not None:
+            from common.d2_convert import RESNET50_CONVERT_MAP
+
+            os.path.exists(d2_path), '{} not exists'.format(d2_path)
+            logging.info("Loading pretrained weight from d2")
+            assert resnet_name == 'resnet50', 'convert map is only available for resnet50'
+            d2_model = torch.load(d2_path)['model']
+            converted_d2_model = {}
+            for k, v in d2_model.items():
+                if k in RESNET50_CONVERT_MAP:
+                    converted_d2_model[RESNET50_CONVERT_MAP[k]] = v
+
+            self.load_state_dict(converted_d2_model)
+            logger.info("d2 model is successfully loaded!")
+
         if bn_frozen:
-            logging.info("The BN in ResNetBase is frozen")
+            logger.info("The BN in ResNetBase is frozen")
             freeze_bn(self)
+
+        for freeze_name in self.freeze_list:
+            logger.info("Freezing resnet's: {}".format(freeze_name))
+            freeze_weights(self.__getattr__(freeze_name))
 
     def forward(self, x, pool=False):
         x = self.conv1(x)

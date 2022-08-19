@@ -19,11 +19,19 @@ class NIMA(nn.Module):
                  **kwargs):
         super().__init__()
         self.base_name = base_name
+        regression = False
+        if 'regression' in kwargs:
+            regression = kwargs.get('regression', False)
+            kwargs.pop('regression')
+
         self.base = get_base(base_name, **kwargs)
-        self.head = nn.Sequential(
+        head_list = [
             nn.Dropout(p=drop_rate),
             nn.Linear(in_features=self.base.last_dim, out_features=num_classes),
-            nn.Softmax(dim=-1))
+        ]
+        if not regression:
+            head_list.append(nn.Softmax(dim=-1))
+        self.head = nn.Sequential(*head_list)
 
     def forward(self, x):
         if 'resnet' in self.base_name:
