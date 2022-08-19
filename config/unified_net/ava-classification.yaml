@@ -10,7 +10,7 @@ trainer:
     run_id: unifiedNet-BinaryClassification
     batch_size: 256
     epoch: 120
-    gpu: !!python/list [ 0, 1 ]
+    gpu: !!python/list [ 4,5 ]
     log_every: 5
     num_workers: 6
     seed: 1234
@@ -18,7 +18,7 @@ trainer:
 dataset:
   name: AVAAestheticClassificationDataset
   params:
-    root: /home/liulizhao/datasets/AVA_dataset
+    root: /mnt/cephfs/dataset/AVA_dataset
 # config for model
 model:
   name: UnifiedNet

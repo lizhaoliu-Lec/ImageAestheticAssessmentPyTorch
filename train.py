@@ -2,7 +2,7 @@ import argparse
 
 from trainer import TrainerFactory
 from trainer.config_parser import ConfigParser
-
+from pprint import pformat
 
 def arg_parser():
     parser = argparse.ArgumentParser(description='config')

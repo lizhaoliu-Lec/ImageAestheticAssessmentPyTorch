@@ -7,47 +7,61 @@ trainer:
   name: ClassificationTrainer
   params:
     run_dir: runs
-    run_id: unifiedNet-BinaryClassification
-    batch_size: 512
+    run_id: attetion-based-distribution
+    batch_size: 256
     epoch: 120
-    gpu: !!python/list [ 0, 1, 2, 3 ]
+    gpu: !!python/list [0,1,2,3,4]
+#    gpu: !!python/list [ 2, 3 ]
     log_every: 5
-    num_workers: 8
+#    num_workers: 8
+    num_workers: 6
     seed: 1234
+#required learning rate for NIMA
+    base_lr: 5.0e-3
+    head_lr: 1.0e-2
 # config for dataset
 dataset:
-  name: AVAAestheticClassificationDataset
+  name: AVAAestheticDistributionDataset
   params:
     root: /mnt/cephfs/dataset/AVA_dataset
 # config for model
 model:
-  name: UnifiedNet
+  name: NIMA 
   params:
-    resnet_name: resnet18
-    stage: pretrained
-    pool_window: !!python/list [ 2, 2 ]
-    fc_dims: !!python/list [ 256, 128 ]
-    num_classes: 2
+    base_name: vgg16
+    pretrained: Ture
+    #pool_window: !!python/list [ 2, 2 ]
+    #fc_dims: !!python/list [ 256, 128 ]
+    num_classes: 10
 # config for loss function
 loss:
-  name: CrossEntropyLoss
+  name: AttentionBasedLoss
+  params:
+    r: 2.0
+    b: 2
 # config for optimizer
 optimizer:
-  name: Adam
+  name: SGD
   params:
-    lr: 0.001
+#    lr: 0.001
+    lr: 0.005
+    weight_decay: 0.0001
+    momentum: 0.9
 # config for lr scheduler
 lr_scheduler:
-  name: ConstantLRScheduler
+  name: WarmupLR
+  params: 
+    warmup_steps: 10
+
 # config for metric
 metric:
-  name: Accuracy
+  name: AccuracyFromDistribution
 # config for training transformation
 train_transforms:
   - name: Scale
     params:
       size: 256
-  - name: RandomFiveCrop
+  - name: RandomCrop
     params:
       size: 224
   - name: RandomHorizontalFlip

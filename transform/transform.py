@@ -103,3 +103,16 @@ class Normalize(transforms.Normalize):
 @TransformFactory.register('CenterCrop')
 class CenterCrop(transforms.CenterCrop):
     pass
+
+
+@TransformFactory.register('CropFivePatches')
+class CropFivePatches(transforms.FiveCrop):
+    def __init__(self, size=224, **kwargs):
+        super().__init__(size=size, **kwargs)
+
+
+
+@TransformFactory.register('RandomCrop')
+class RandomCrop(transforms.RandomCrop):
+    def __init__(self,size=224,**kwargs) -> None:
+        super().__init__(size=224,**kwargs)

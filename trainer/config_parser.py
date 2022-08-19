@@ -43,7 +43,7 @@ class ConfigParser:
         self.metric = self.config['metric']
         self.train_transforms = self.config['train_transforms']
         self.test_transforms = self.config['test_transforms']
-
+        #self.save_dir = self.config['save_dir']
         # init the logger
         set_logging(level=self.logger['level'], name=PROJECT_NAME)
 

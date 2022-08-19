@@ -18,7 +18,7 @@ trainer:
     seed: 1234
 #required learning rate for NIMA
     base_lr: 5.0e-3
-    head_lr: 1.0e-1
+    head_lr: 1.0e-2
 # config for dataset
 dataset:
   name: AVAAestheticDistributionDataset
@@ -48,10 +48,10 @@ optimizer:
     momentum: 0.9
 # config for lr scheduler
 lr_scheduler:
-  name: StepLR
+  name: WarmupLR
   params: 
-    step_size: 10
-    gamma: 0.95
+    warmup_steps: 10
+
 # config for metric
 metric:
   name: AccuracyFromDistribution
@@ -60,7 +60,7 @@ train_transforms:
   - name: Scale
     params:
       size: 256
-  - name: RandomFiveCrop
+  - name: RandomCrop
     params:
       size: 224
   - name: RandomHorizontalFlip

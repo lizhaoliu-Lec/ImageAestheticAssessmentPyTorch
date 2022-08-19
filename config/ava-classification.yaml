@@ -21,7 +21,7 @@ trainer:
 dataset:
   name: AVAAestheticClassificationDataset
   params:
-    root: /home/liulizhao/datasets/AVA_dataset
+    root: /mnt/cephfs/dataset/AVA_dataset
 # config for model
 model:
   name: UnifiedNet
