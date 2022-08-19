@@ -168,16 +168,19 @@ class ClassificationTrainer:
                 # log to tensorboard
                 self.tensorboard.add_scalar('Train/Loss-Step', self.loss_meter.cur, global_step=self.global_step)
                 self.tensorboard.add_scalar('Train/Metric-Step', self.metric_meter.cur, global_step=self.global_step)
-                for lr_id, lr in enumerate(self.lr_scheduler.get_lr()):
-                    self.tensorboard.add_scalar('Train/LR%d' % lr_id, lr, global_step=self.global_step)
-
+                if self.optimizer.__class__.__name__!='AdamWarmup':
+                    for lr_id, lr in enumerate(self.lr_scheduler.get_lr()):
+                        self.tensorboard.add_scalar('Train/LR%d' % lr_id, lr, global_step=self.global_step)
+                else:
+                    for lr_id, lr in enumerate(self.optimizer.get_lr()):
+                        self.tensorboard.add_scalar('Train/LR%d' % lr_id, lr, global_step=self.global_step)
             self.global_step += 1
 
     def train_one_epoch(self, epoch):
         logger = logging.getLogger(PROJECT_NAME)
         logger.info("Start training for epoch: %d" % epoch)
 
-        #self.optimizer.step()  # In PyTorch 1.1.0 and later,
+        self.optimizer.step()  # In PyTorch 1.1.0 and later,
         self.lr_scheduler.step(epoch=epoch)
         for x, target in tqdm(self.train_loader):
             self.step(x, target, train=True)
