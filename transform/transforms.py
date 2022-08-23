@@ -1,6 +1,7 @@
 import numbers
 from typing import List
 
+import torch
 from torch import Tensor
 from torchvision import transforms
 from torchvision.transforms.functional import center_crop
@@ -107,12 +108,50 @@ class CenterCrop(transforms.CenterCrop):
 
 @TransformFactory.register('CropFivePatches')
 class CropFivePatches(transforms.FiveCrop):
-    def __init__(self, size=224, **kwargs):
-        super().__init__(size=size, **kwargs)
-
+    def __init__(self, size=224):
+        super().__init__(size=size)
 
 
 @TransformFactory.register('RandomCrop')
 class RandomCrop(transforms.RandomCrop):
-    def __init__(self,size=224,**kwargs) -> None:
-        super().__init__(size=224,**kwargs)
+    def __init__(self, size=224, **kwargs) -> None:
+        super().__init__(size=size, **kwargs)
+
+
+@TransformFactory.register('CropFivePatchNToTensor')
+class CropFivePatchNToTensor(transforms.RandomCrop):
+    def __init__(self, size=224, num_patches=5) -> None:
+        super().__init__(size=size)
+        self.num_patches = num_patches
+
+    def forward(self, img):
+        five_patches = []
+        for num in range(self.num_patches):
+            patch = super().forward(img)
+            to_tensor_layer = transforms.ToTensor()
+            tensor_patch = to_tensor_layer(patch)
+            five_patches.append(tensor_patch)
+        five_patches = torch.stack(five_patches)
+        return five_patches
+
+
+if __name__ == '__main__':
+    from trainer import trainer
+    from trainer import config_parser
+    from torch.utils.data import DataLoader
+
+    config = config_parser.ConfigParser(config_path="test_multi_patch.yaml")
+
+    train_transforms = trainer.get_transforms(config.train_transforms)
+    test_transforms = trainer.get_transforms(config.test_transforms)
+    train_dataset, test_dataset = trainer.get_train_test_dataset(config.dataset, train_transforms=train_transforms,
+                                                                 test_transforms=test_transforms)
+    train_loader = DataLoader(dataset=train_dataset, batch_size=5,
+                              shuffle=True, pin_memory=True)
+    train_loader_iter = iter(train_loader)
+    batch_data = next(train_loader_iter)
+    for single_data in batch_data:
+        # to_image_tool = transforms.ToPILImage()
+        # img = to_image_tool(single_data[0])
+        # img.show()
+        print("[normal dataloader] size of single data in batch:{}".format(single_data.size()))

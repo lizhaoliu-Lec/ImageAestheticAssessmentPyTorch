@@ -81,39 +81,7 @@ class EarthMoverDistanceLoss(nn.Module):
     def forward(self, input: torch.Tensor, target: torch.Tensor):
         return earth_mover_distance(input, target, r=self.r)
 
-def attention_loss(input: torch.Tensor, target: torch.Tensor, r: float = 2,b:int=2):
-    """
-    Batch Earth Mover's Distance implementation.
-    Args:
-        input: B x num_classes
-        target: B x num_classes
-        r: float, to penalize the Euclidean distance between the CDFs
 
-    Returns:
-
-    """
-
-    N, num_classes = input.size()
-    input_cumsum = torch.cumsum(input, dim=-1)
-    target_cumsum = torch.cumsum(target, dim=-1)
-
-    diff = torch.abs(input_cumsum - target_cumsum) ** r
-
-    class_wise = (torch.sum(diff, dim=-1) / num_classes) ** (1. / r)
-    weight=torch.ones_like(class_wise)-class_wise**(b)
-    class_wise=class_wise*weight
-    scalar_ret = torch.sum(class_wise) / N
-    return scalar_ret
-
-@LossFactory.register('AttentionBasedLoss')
-class AttentionLoss(nn.Module):
-    def __init__(self, r: float = 2.0,b:int=2):
-        super().__init__()
-        self.r = r
-        self.b=b
-
-    def forward(self, input: torch.Tensor, target: torch.Tensor):
-        return attention_loss(input, target, r=self.r,b=self.b)
 
 if __name__ == '__main__':
     def run_earth_mover_distance():
