@@ -4,7 +4,6 @@ from torch.utils.data import DataLoader
 
 from typing import List, Dict
 from tqdm import tqdm
-import numpy as np
 import random
 
 from common import PROJECT_NAME
@@ -79,6 +78,8 @@ class ClassificationTrainer:
         train_dataset, test_dataset = get_train_test_dataset(self.config.dataset,
                                                              train_transforms=train_transforms,
                                                              test_transforms=test_transforms)
+        # logger=logging.getLogger()
+        logger = logging.getLogger(PROJECT_NAME)
         logger.info("Training dataset: \n%s" % train_dataset)
         logger.info("Test dataset: \n%s" % test_dataset)
 
@@ -168,9 +169,12 @@ class ClassificationTrainer:
                 # log to tensorboard
                 self.tensorboard.add_scalar('Train/Loss-Step', self.loss_meter.cur, global_step=self.global_step)
                 self.tensorboard.add_scalar('Train/Metric-Step', self.metric_meter.cur, global_step=self.global_step)
-                for lr_id, lr in enumerate(self.lr_scheduler.get_last_lr()):
-                    self.tensorboard.add_scalar('Train/LR%d' % lr_id, lr, global_step=self.global_step)
-
+                if self.optimizer.__class__.__name__ != 'AdamWarmup':
+                    for lr_id, lr in enumerate(self.lr_scheduler.get_lr()):
+                        self.tensorboard.add_scalar('Train/LR%d' % lr_id, lr, global_step=self.global_step)
+                else:
+                    for lr_id, lr in enumerate(self.optimizer.get_lr()):
+                        self.tensorboard.add_scalar('Train/LR%d' % lr_id, lr, global_step=self.global_step)
             self.global_step += 1
 
     def train_one_epoch(self, epoch):

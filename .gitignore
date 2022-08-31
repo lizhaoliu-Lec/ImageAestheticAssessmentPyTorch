@@ -133,3 +133,7 @@ dmypy.json
 # runs file
 
 /runs
+
+*/runs
+
+.vscode
