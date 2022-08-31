@@ -5,9 +5,8 @@ import torch
 from torch import Tensor
 from torchvision import transforms
 from torchvision.transforms.functional import center_crop
-
 import random
-
+import torch.nn as nn
 from transform.factory import TransformFactory
 
 
@@ -118,40 +117,59 @@ class RandomCrop(transforms.RandomCrop):
         super().__init__(size=size, **kwargs)
 
 
-@TransformFactory.register('CropFivePatchNToTensor')
-class CropFivePatchNToTensor(transforms.RandomCrop):
+@TransformFactory.register('CropPatches')
+class CropPatches(transforms.RandomCrop):
     def __init__(self, size=224, num_patches=5) -> None:
         super().__init__(size=size)
         self.num_patches = num_patches
+        self.to_tensor_layer = transforms.ToTensor()
 
     def forward(self, img):
-        five_patches = []
-        for num in range(self.num_patches):
-            patch = super().forward(img)
-            to_tensor_layer = transforms.ToTensor()
-            tensor_patch = to_tensor_layer(patch)
-            five_patches.append(tensor_patch)
-        five_patches = torch.stack(five_patches)
-        return five_patches
+        return [super(CropPatches, self).forward(img) for _ in range(self.num_patches)]
+
+
+@TransformFactory.register('MultiPatchFlip')
+class MultiPatch(transforms.RandomHorizontalFlip):
+    def __init__(self, p=0.5):
+        super().__init__(p)
+
+    def forward(self, img):
+        return [super(MultiPatch, self).forward(_) for _ in img]
+
+
+@TransformFactory.register('MultiPatchToTensor')
+class MultiPatchToPatch(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, img):
+        to_tensor_layer = transforms.ToTensor()
+        img_tensor = torch.stack([to_tensor_layer(i) for i in img])
+        return img_tensor
 
 
 if __name__ == '__main__':
-    from trainer import trainer
-    from trainer import config_parser
-    from torch.utils.data import DataLoader
+    def run_crop_crop_five_patch_to_tensor():
+        from trainer import trainer
+        from trainer import config_parser
+        from torch.utils.data import DataLoader
 
-    config = config_parser.ConfigParser(config_path="test_multi_patch.yaml")
+        config = config_parser.ConfigParser(config_path="test_multi_patch.yaml")
 
-    train_transforms = trainer.get_transforms(config.train_transforms)
-    test_transforms = trainer.get_transforms(config.test_transforms)
-    train_dataset, test_dataset = trainer.get_train_test_dataset(config.dataset, train_transforms=train_transforms,
-                                                                 test_transforms=test_transforms)
-    train_loader = DataLoader(dataset=train_dataset, batch_size=5,
-                              shuffle=True, pin_memory=True)
-    train_loader_iter = iter(train_loader)
-    batch_data = next(train_loader_iter)
-    for single_data in batch_data:
-        # to_image_tool = transforms.ToPILImage()
-        # img = to_image_tool(single_data[0])
-        # img.show()
-        print("[normal dataloader] size of single data in batch:{}".format(single_data.size()))
+        train_transforms = trainer.get_transforms(config.train_transforms)
+        test_transforms = trainer.get_transforms(config.test_transforms)
+        train_dataset, test_dataset = trainer.get_train_test_dataset(config.dataset,
+                                                                     train_transforms=train_transforms,
+                                                                     test_transforms=test_transforms)
+        train_loader = DataLoader(dataset=train_dataset, batch_size=5,
+                                  shuffle=True, pin_memory=True)
+        train_loader_iter = iter(train_loader)
+        batch_data = next(train_loader_iter)
+        for single_data in batch_data:
+            # to_image_tool = transforms.ToPILImage()
+            # img = to_image_tool(single_data[0])
+            # img.show()
+            print("[normal dataloader] size of single data in batch:{}".format(single_data.size()))
+
+
+    run_crop_crop_five_patch_to_tensor()

@@ -19,23 +19,28 @@ class ConfigParser:
         self.config = config
         self.now = str(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
         check_if_has_required_args(self.config,
-                                   ['logger', 'trainer', 'dataset', 'model',
+                                   ['logger', 'trainer', 'train_dataset', 'test_dataset', 'model',
                                     'loss', 'optimizer', 'lr_scheduler',
-                                    'metric', 'train_transforms', 'train_transforms'])
+                                    'metric', 'train_transforms', 'train_transforms', 'train_dataloader',
+                                    'test_dataloader'])
 
         self.fix_empty_params_of_dict(self.config['trainer'])
-        self.fix_empty_params_of_dict(self.config['dataset'])
+        self.fix_empty_params_of_dict(self.config['train_dataset'])
+        self.fix_empty_params_of_dict(self.config['test_dataset'])
         self.fix_empty_params_of_dict(self.config['model'])
         self.fix_empty_params_of_dict(self.config['loss'])
         self.fix_empty_params_of_dict(self.config['optimizer'])
         self.fix_empty_params_of_dict(self.config['lr_scheduler'])
         self.fix_empty_params_of_dict(self.config['metric'])
+        self.fix_empty_params_of_dict(self.config['train_dataloader'])
+        self.fix_empty_params_of_dict(self.config['test_dataloader'])
         self.fix_empty_params_of_dicts(self.config['train_transforms'])
         self.fix_empty_params_of_dicts(self.config['test_transforms'])
 
         self.logger = self.config['logger']
         self.trainer = self.config['trainer']
-        self.dataset = self.config['dataset']
+        self.train_dataset = self.config['train_dataset']
+        self.test_dataset = self.config['test_dataset']
         self.model = self.config['model']
         self.loss = self.config['loss']
         self.optimizer = self.config['optimizer']
@@ -43,7 +48,9 @@ class ConfigParser:
         self.metric = self.config['metric']
         self.train_transforms = self.config['train_transforms']
         self.test_transforms = self.config['test_transforms']
-        #self.save_dir = self.config['save_dir']
+        self.train_dataloader = self.config['train_dataloader']
+        self.test_dataloader = self.config['test_dataloader']
+        # self.save_dir = self.config['save_dir']
         # init the logger
         set_logging(level=self.logger['level'], name=PROJECT_NAME)
 
@@ -94,7 +101,7 @@ class ConfigParser:
     @property
     def save_dir(self):
         _save_dir = join(self.trainer['params']['run_dir'],
-                         self.dataset['name'],
+                         self.train_dataset['name'],
                          self.trainer['params']['run_id'] + '-' + self.now)
         mkdirs_if_not_exist(_save_dir)
         return _save_dir

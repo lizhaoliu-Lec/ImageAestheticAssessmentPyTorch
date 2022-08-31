@@ -24,11 +24,9 @@ import os
 
 import numpy as np
 from PIL import Image
-
 from torchvision.datasets import VisionDataset
 
 from common.utils import check_if_file_exists, join
-
 from dataset import DatasetFactory
 
 
@@ -300,6 +298,23 @@ class AVAStyleClassificationDataset(AVABaseDataset):
         self._targets = self.imageId2style
 
 
+@DatasetFactory.register('AVADatasetWithIndex')
+class AVAIndexDataset(VisionDataset):
+    def __init__(self, root, split='train', transforms=None, base_dataset: str = 'AVAAestheticClassificationDataset'):
+        self.dataset = DatasetFactory.instantiate(
+            {'name': base_dataset, 'params': {'root': root, 'split': split, 'transforms': transforms}})
+
+    def __getitem__(self, index):
+        image, target = self.dataset[index]
+        return image, index, target
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __repr__(self):
+        return repr(self.dataset)
+
+
 if __name__ == '__main__':
     from tqdm import tqdm
     import matplotlib.pyplot as plt
@@ -394,8 +409,8 @@ if __name__ == '__main__':
 
 
     def run_AVADataset(AVADataset, _break=True):
-        d_train = AVADataset(root='/home/liulizhao/datasets/AVA_dataset', split='train')
-        d_test = AVADataset(root='/home/liulizhao/datasets/AVA_dataset', split='test')
+        d_train = AVADataset(root='/mnt/cephfs/dataset/AVA_dataset', split='train')
+        d_test = AVADataset(root='/mnt/cephfs/dataset/AVA_dataset', split='test')
 
         print("===> Train: \n", d_train)
         print("===> Test: \n", d_test)
@@ -462,4 +477,5 @@ if __name__ == '__main__':
     # run_process_style_content()
     # compare_ava_and_aesthetic_split()
     # run_all_dataset()
-    visualize_all_dataset()
+    # visualize_all_dataset()
+    run_AVADataset(AVAAestheticClassificationDataset, True)

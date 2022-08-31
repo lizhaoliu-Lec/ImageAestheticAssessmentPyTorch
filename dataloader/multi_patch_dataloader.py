@@ -11,20 +11,29 @@ def multi_patch_collate(batch, shuffle=False):
     num_patches = batch[0][0].size(0)
     input_tensor = torch.stack([x[0] for x in batch], dim=0)
     input_tensor = torch.reshape(input_tensor, (-1, input_tensor.size(2), input_tensor.size(3), input_tensor.size(4)))
-    index_list = [i for i in range(len(batch))]
-    if shuffle:
-        random.shuffle(index_list)
-    # distribution
-    if isinstance(batch[0][1], list):
-        label_tensor = torch.cat([torch.tensor([batch[i][1]]).repeat(num_patches, 1) for i in index_list])
-    elif isinstance(batch[0][1], numpy.ndarray):
-        label_tensor = torch.cat([torch.tensor([batch[i][1]]).repeat(num_patches, 1) for i in index_list])
-    # classification
-    elif isinstance(batch[0][1], int):
-        label_tensor = torch.cat([torch.tensor([batch[i][1]]).repeat(num_patches, 1) for i in index_list])
+
+    def _stack(index):
+        index_list = [i for i in range(len(batch))]
+        # distribution
+        if isinstance(batch[0][index], list):
+            return torch.cat([torch.tensor([batch[i][index]]).repeat(num_patches, ) for i in index_list])
+        elif isinstance(batch[0][index], numpy.ndarray):
+            return torch.cat([torch.tensor([batch[i][index]]).repeat(num_patches, ) for i in index_list])
+        # classification
+        elif isinstance(batch[0][index], int):
+            return torch.cat([torch.tensor([batch[i][index]]).repeat(num_patches, ) for i in index_list])
+        else:
+            raise TypeError("label types:{} except list and int are not implemented yet".format(type(batch[0][1])))
+
+    if len(batch[0]) == 3:
+        info_tensor = [_stack(i + 1) for i in range(len(batch[0]) - 1)]
     else:
-        raise TypeError("label types:{} except list and int are not implemented ".format(type(batch[0][1])))
-    output = [input_tensor, label_tensor]
+        info_tensor = _stack(1)
+    if shuffle:
+        shuffle_list = torch.randperm(len(batch) * num_patches)
+        input_tensor = torch.stack(input_tensor[shuffle_list])
+        info_tensor[-1] = torch.stack(info_tensor[-1][shuffle_list])
+    output = [input_tensor, info_tensor]
     return output
 
 
@@ -52,29 +61,36 @@ class Dataloader(DataLoader):
 
 
 if __name__ == '__main__':
-    import torch
-    import numpy
-    from trainer import trainer
-    from trainer import config_parser
-    from torch.utils.data import DataLoader
-    from tensorboardX import SummaryWriter
+    def test_multi_patch_dataloader():
+        import torch
+        import numpy
+        from trainer import trainer
+        from trainer import config_parser
+        from torch.utils.data import DataLoader
+        from tqdm import tqdm
 
-    config = config_parser.ConfigParser(config_path="dataloader/test_multi_patch.yaml")
+        config = config_parser.ConfigParser(config_path="dataloader/test_multi_patch.yaml")
 
-    train_transforms = trainer.get_transforms(config.train_transforms)
-    test_transforms = trainer.get_transforms(config.test_transforms)
-    train_dataset, test_dataset = trainer.get_train_test_dataset(config.dataset, train_transforms=train_transforms,
-                                                                 test_transforms=test_transforms)
-    train_loader = MultiPatchDataloader(dataset=train_dataset, collate_fn="sequence_multi_patch_collate", batch_size=5,
-                                        shuffle=True, pin_memory=True)
-    train_loader_iter = iter(train_loader)
-    batch_data_tensor = next(train_loader_iter)
-    input_data = batch_data_tensor[0]
-    label = batch_data_tensor[1]
-    print("size of input data in a batch{}".format(input_data.size()))
-    print("size of label in a batch{}".format(label.size()))
-    writer = SummaryWriter("dataloader/log")
-    for i in range(5 * 5):
-        img_array = numpy.array(input_data[i])
-        writer.add_image("train", img_array, i, dataformats="CHW")
-        print("{} score: {}".format(i,label[i]))
+        train_transforms = trainer.get_transforms(config.train_transforms)
+        test_transforms = trainer.get_transforms(config.test_transforms)
+        train_dataset, test_dataset = trainer.get_train_test_dataset(
+            {'train_dataset': config.train_dataset, 'test_dataset': config.test_dataset},
+            train_transforms=train_transforms,
+            test_transforms=test_transforms)
+        train_loader = MultiPatchDataloader(dataset=train_dataset, collate_fn="sequence_multi_patch_collate",
+                                            batch_size=5,
+                                            shuffle=True, pin_memory=True)
+        test_loader = DataLoader(dataset=test_dataset, batch_size=5)
+        for batch_data_tensor, target in tqdm(train_loader):
+            print(batch_data_tensor.size())
+            print(target)
+
+            break
+        for batch_data_tensor, target in tqdm(test_loader):
+            print(batch_data_tensor.size())
+            print(target)
+
+            break
+
+
+    test_multi_patch_dataloader()
