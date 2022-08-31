@@ -23,6 +23,7 @@ from optimizer import OptimizerFactory
 from lr_scheduler import LRSchedulerFactory
 from loss import LossFactory
 from metric import MetricFactory
+from dataloader import DataloaderFactory
 
 
 def get_transforms(transform_settings: List[Dict]):
@@ -32,15 +33,16 @@ def get_transforms(transform_settings: List[Dict]):
     return torchvision.transforms.Compose(transforms)
 
 
-def get_train_test_dataset(dataset_setting: Dict, train_transforms, test_transforms):
-    dataset_setting['params']['split'] = 'train'
-    dataset_setting['params']['transforms'] = train_transforms
-    train_dataset = DatasetFactory.instantiate(dataset_setting)
-    dataset_setting['params']['split'] = 'test'
-    dataset_setting['params']['transforms'] = test_transforms
-    test_dataset = DatasetFactory.instantiate(dataset_setting)
-    dataset_setting['params'].pop('split')
-    dataset_setting['params'].pop('transforms')
+def get_train_test_dataset(dataset_setting: dict, train_transforms, test_transforms):
+    dataset_setting['train_dataset']['params']['split'] = 'train'
+    dataset_setting['train_dataset']['params']['transforms'] = train_transforms
+    train_dataset = DatasetFactory.instantiate(dataset_setting['train_dataset'])
+    dataset_setting['test_dataset']['params']['split'] = 'test'
+    dataset_setting['test_dataset']['params']['transforms'] = test_transforms
+    test_dataset = DatasetFactory.instantiate(dataset_setting['test_dataset'])
+    for dataset in ['train_dataset','test_dataset']:
+        dataset_setting[dataset]['params'].pop('split')
+        dataset_setting[dataset]['params'].pop('transforms')
     return train_dataset, test_dataset
 
 
@@ -48,18 +50,12 @@ def get_train_test_dataset(dataset_setting: Dict, train_transforms, test_transfo
 class ClassificationTrainer:
     def __init__(self, config: ConfigParser,
                  run_dir, run_id,
-                 batch_size, num_workers,
                  epoch, log_every,
                  gpu, seed,
                  base_lr=None, head_lr=None):
-
-        logger = logging.getLogger(PROJECT_NAME)
-
         self.config = config
         self.run_dir = run_dir
         self.run_id = run_id
-        self.batch_size = batch_size
-        self.num_workers = num_workers
         self.epoch = epoch
         self.log_every = log_every
         self.gpu = gpu
@@ -75,7 +71,7 @@ class ClassificationTrainer:
         test_transforms = get_transforms(self.config.test_transforms)
 
         # get the train/test dataset
-        train_dataset, test_dataset = get_train_test_dataset(self.config.dataset,
+        train_dataset, test_dataset = get_train_test_dataset({'train_dataset':self.config.train_dataset,'test_dataset':self.config.test_dataset},
                                                              train_transforms=train_transforms,
                                                              test_transforms=test_transforms)
         # logger=logging.getLogger()
@@ -84,12 +80,10 @@ class ClassificationTrainer:
         logger.info("Test dataset: \n%s" % test_dataset)
 
         # get the train/test loader
-        self.train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size,
-                                       num_workers=self.num_workers,
-                                       shuffle=True, pin_memory=True)
-        self.test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size,
-                                      num_workers=self.num_workers,
-                                      shuffle=False, pin_memory=True)
+        self.config.train_dataloader['params']['dataset'] = train_dataset
+        self.train_loader = DataloaderFactory.instantiate(self.config.train_dataloader)
+        self.config.test_dataloader['params']['dataset'] = test_dataset
+        self.test_loader = DataloaderFactory.instantiate(self.config.test_dataloader)
 
         # get the model
         self.model = ModelFactory.instantiate(self.config.model)
@@ -153,10 +147,15 @@ class ClassificationTrainer:
         prediction = self.model(x)
 
         if self.gpu:
-            target = target.cuda()
+            if type(target) == torch.Tensor:
+                target = target.cuda()
+                metric = self.metric(prediction, target)
+            else:
+                target = [_.cuda() for _ in target]
+                metric = self.metric(prediction, target[-1])
 
         loss = self.loss(prediction, target)
-        metric = self.metric(prediction, target)
+
         self.loss_meter.add(loss.item(), bs)
         self.metric_meter.add(metric, bs)
 

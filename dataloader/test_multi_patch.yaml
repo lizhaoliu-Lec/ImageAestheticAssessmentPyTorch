@@ -7,35 +7,54 @@ trainer:
   name: ClassificationTrainer
   params:
     run_dir: runs
-    run_id: attention-based-distribution
-    batch_size: 256
+    run_id: adaptive-attention-based-classification
     epoch: 120
-    gpu: !!python/list [0,1,2,3,4]
+    gpu: !!python/list [ 0,1,2,3,4,5,6,7 ]
     #    gpu: !!python/list [ 2, 3 ]
     log_every: 5
     #    num_workers: 8
-    num_workers: 6
+    
     seed: 1234
     #required learning rate for NIMA
     base_lr: 5.0e-3
     head_lr: 1.0e-2
 # config for dataset
-dataset:
-  name: AVAAestheticDistributionDataset
+train_dataset:
+  name: AVADatasetWithIndex
   params:
     root: /mnt/cephfs/dataset/AVA_dataset
+    base_dataset: AVAAestheticClassificationDataset
+test_dataset:
+  name: AVAAestheticClassificationDataset
+  params:
+    root: /mnt/cephfs/dataset/AVA_dataset
+# dataloader (Dataloader or MultiPatchDataloader)
+train_dataloader:
+  name: MultiPatchDataloader
+  params:
+    batch_size: 512
+    num_workers: 6
+    shuffle: True
+    pin_memory: True
+    collate_fn: sequence_multi_patch_collate
+# dataloader (Dataloader or MultiPatchDataloader)
+test_dataloader:
+  name: Dataloader
+  params:
+    batch_size: 1024
+    num_workers: 6
+    shuffle: True
+    pin_memory: True
 # config for model
 model:
-  name: NIMA
+  name: ResNet
   params:
-    base_name: vgg16
-    pretrained: Ture
-    #pool_window: !!python/list [ 2, 2 ]
-    #fc_dims: !!python/list [ 256, 128 ]
-    num_classes: 10
+    base_name: resnet18
+    stage: pretrained
+    num_classes: 2
 # config for loss function
 loss:
-  name: AttentionBasedLoss
+  name: AdaptiveAttentionLoss
   params:
     r: 2.0
     b: 2
@@ -55,16 +74,24 @@ lr_scheduler:
 
 # config for metric
 metric:
-  name: AccuracyFromDistribution
+  name: Accuracy
 # config for training transformation
 train_transforms:
   - name: Scale
     params:
       size: 256
-  - name: CropFivePatchNToTensor
+  - name: CropPatches
     params:
       size: 224
-      num_patches: 5
+      num_patches: 4
+  - name: MultiPatchFlip
+    params:
+      p: 0.5
+  - name: MultiPatchToTensor
+  - name: Normalize
+    params:
+      mean: !!python/list [ 0.485, 0.456, 0.406 ]
+      std: !!python/list [ 0.229, 0.224, 0.225 ]
 # config for test transformation
 test_transforms:
   - name: Scale

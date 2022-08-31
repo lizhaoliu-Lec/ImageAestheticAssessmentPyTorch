@@ -29,7 +29,7 @@ model:
   name: NIMA 
   params:
     base_name: vgg16
-    pretrained: Ture
+    pretrained: True
     #pool_window: !!python/list [ 2, 2 ]
     #fc_dims: !!python/list [ 256, 128 ]
     num_classes: 10

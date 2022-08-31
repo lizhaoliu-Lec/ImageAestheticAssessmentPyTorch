@@ -1,4 +1,4 @@
-import imp
-from factory import DataloaderFactory
-from multi_patch_dataloader import sequence_multi_patch_collate
-from multi_patch_dataloader import random_multi_patch_collate
+from .factory import DataloaderFactory
+from .multi_patch_dataloader import sequence_multi_patch_collate
+from .multi_patch_dataloader import random_multi_patch_collate
+from .multi_patch_dataloader import MultiPatchDataloader
