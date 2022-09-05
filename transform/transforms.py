@@ -117,28 +117,28 @@ class RandomCrop(transforms.RandomCrop):
         super().__init__(size=size, **kwargs)
 
 
-@TransformFactory.register('CropPatches')
-class CropPatches(transforms.RandomCrop):
+@TransformFactory.register('MultiPatchCrop')
+class MultiPatchCrop(transforms.RandomCrop):
     def __init__(self, size=224, num_patches=5) -> None:
         super().__init__(size=size)
         self.num_patches = num_patches
         self.to_tensor_layer = transforms.ToTensor()
 
     def forward(self, img):
-        return [super(CropPatches, self).forward(img) for _ in range(self.num_patches)]
+        return [super(MultiPatchCrop, self).forward(img) for _ in range(self.num_patches)]
 
 
 @TransformFactory.register('MultiPatchFlip')
-class MultiPatch(transforms.RandomHorizontalFlip):
+class MultiPatchFlip(transforms.RandomHorizontalFlip):
     def __init__(self, p=0.5):
         super().__init__(p)
 
     def forward(self, img):
-        return [super(MultiPatch, self).forward(_) for _ in img]
+        return [super(MultiPatchFlip, self).forward(_) for _ in img]
 
 
 @TransformFactory.register('MultiPatchToTensor')
-class MultiPatchToPatch(nn.Module):
+class MultiPatchToTensor(nn.Module):
     def __init__(self):
         super().__init__()
 
@@ -158,9 +158,10 @@ if __name__ == '__main__':
 
         train_transforms = trainer.get_transforms(config.train_transforms)
         test_transforms = trainer.get_transforms(config.test_transforms)
-        train_dataset, test_dataset = trainer.get_train_test_dataset(config.dataset,
-                                                                     train_transforms=train_transforms,
-                                                                     test_transforms=test_transforms)
+        train_dataset, test_dataset = trainer.get_train_test_dataset(
+            {"train_dataset": config.train_dataset, "test_dataset": config.test_dataset},
+            train_transforms=train_transforms,
+            test_transforms=test_transforms)
         train_loader = DataLoader(dataset=train_dataset, batch_size=5,
                                   shuffle=True, pin_memory=True)
         train_loader_iter = iter(train_loader)
