@@ -4,30 +4,26 @@ from loss import LossFactory
 import torch.nn.functional as f
 
 
-@LossFactory.register('AdaptiveAttentionLossBaseClass')
 class BaseAttentionLoss(nn.Module):
-    def __init__(self, r: float = 2.0, b: int = 2):
+    def __init__(self, beta: int = 2):
         super().__init__()
-        self.r = r
-        self.b = b
+        self.beta = beta
 
     def forward(self, _input: torch.Tensor, target: torch.Tensor):
         # CrossEntropyLoss expect raw input, but not softmax(input)
-        cross_entropy_loss = f.cross_entropy(_input, target, reduction='none').to(_input.device)
+        cross_entropy_loss = f.cross_entropy(_input, target, reduction='none')
 
-        softmax_input = f.softmax(_input, 1).to(_input.device)
+        softmax_input = f.softmax(_input, 1)
         one_hot_target = f.one_hot(target, num_classes=2).to(_input.device)
-        weight = (torch.ones(softmax_input.size(0)).to(_input.device) - torch.sum(
-            one_hot_target * softmax_input,
-            dim=1).to(_input.device) ** self.b)
-        loss = torch.mean(weight * cross_entropy_loss).to(_input.device)
+        weight = 1 - softmax_input[one_hot_target.bool()] ** self.beta
+        loss = torch.mean(weight * cross_entropy_loss)
         return loss
 
 
 @LossFactory.register('AdaptiveAttentionLoss')
-class AttentionLoss(BaseAttentionLoss):
-    def __init__(self, r: float = 2.0, b: int = 2):
-        super().__init__(r, b)
+class AdaptiveAttentionLoss(BaseAttentionLoss):
+    def __init__(self, beta: int = 2):
+        super().__init__(beta)
 
     def forward(self, _input: torch.Tensor, target):
         if type(target) == torch.Tensor:
@@ -68,11 +64,8 @@ class AverageAttentionLoss(nn.CrossEntropyLoss):
 
 # min_probability=max_loss
 def max_attention_loss(_input, target):
-    if type(target) == torch.Tensor:
-        return f.cross_entropy(_input, target, reduction='mean')
-    elif type(target) == list and len(target) == 2:
-        cross_entropy_loss = f.cross_entropy(_input, target, reduction='none')
-        return torch.max(cross_entropy_loss)
+    cross_entropy_loss = f.cross_entropy(_input, target, reduction='none')
+    return torch.max(cross_entropy_loss)
 
 
 @LossFactory.register("MaxAttentionLoss")
@@ -81,9 +74,9 @@ class MaxAttentionLoss(nn.Module):
         super().__init__()
 
     def forward(self, _input, target):
-        if len(target) == 1:
+        if type(target) == torch.Tensor:
             return f.cross_entropy(_input, target, reduction='mean')
-        elif len(target) == 2:
+        elif type(target) == list and len(target) == 2:
             index = target[0]
             label = target[1]
             loss = 0
@@ -97,7 +90,7 @@ class MaxAttentionLoss(nn.Module):
 
 if __name__ == '__main__':
     def adaptive_attention_loss_with_index(sample_input, sample_target):
-        attention_loss = AttentionLoss(2.0, 2)
+        attention_loss = AdaptiveAttentionLoss(2)
         loss = attention_loss.forward(sample_input, sample_target)
         normal_cross_entropy_loss_layer = nn.CrossEntropyLoss()
         normal_cross_entropy_loss = normal_cross_entropy_loss_layer.forward(input=sample_input, target=sample_target[1])
@@ -166,14 +159,14 @@ if __name__ == '__main__':
             print(batch_data_tensor)
             print(target[0])
             print(target[1])
-            attention_loss = AttentionLoss(2.0, 2)
+            attention_loss = AdaptiveAttentionLoss(2)
             loss = attention_loss(batch_data_tensor, target)
             print(loss)
 
 
     def show_test_loss():
         sample_input, sample_target = generate_test_data()
-        attention_loss = AttentionLoss(2.0, 2)
+        attention_loss = AdaptiveAttentionLoss(2)
         loss = attention_loss.forward(sample_input, sample_target[-1])
         print("test loss {}".format(loss))
         adaptive_attention_loss_with_index(sample_input, sample_target)
@@ -181,5 +174,5 @@ if __name__ == '__main__':
 
     # gpu_loss()
 
-    # show_all_attention_loss()
-    show_test_loss()
+    show_all_attention_loss()
+    # show_test_loss()

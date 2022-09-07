@@ -40,7 +40,7 @@ def get_train_test_dataset(dataset_setting: dict, train_transforms, test_transfo
     dataset_setting['test_dataset']['params']['split'] = 'test'
     dataset_setting['test_dataset']['params']['transforms'] = test_transforms
     test_dataset = DatasetFactory.instantiate(dataset_setting['test_dataset'])
-    for dataset in ['train_dataset','test_dataset']:
+    for dataset in ['train_dataset', 'test_dataset']:
         dataset_setting[dataset]['params'].pop('split')
         dataset_setting[dataset]['params'].pop('transforms')
     return train_dataset, test_dataset
@@ -71,9 +71,10 @@ class ClassificationTrainer:
         test_transforms = get_transforms(self.config.test_transforms)
 
         # get the train/test dataset
-        train_dataset, test_dataset = get_train_test_dataset({'train_dataset':self.config.train_dataset,'test_dataset':self.config.test_dataset},
-                                                             train_transforms=train_transforms,
-                                                             test_transforms=test_transforms)
+        train_dataset, test_dataset = get_train_test_dataset(
+            {'train_dataset': self.config.train_dataset, 'test_dataset': self.config.test_dataset},
+            train_transforms=train_transforms,
+            test_transforms=test_transforms)
         # logger=logging.getLogger()
         logger = logging.getLogger(PROJECT_NAME)
         logger.info("Training dataset: \n%s" % train_dataset)
@@ -147,15 +148,10 @@ class ClassificationTrainer:
         prediction = self.model(x)
 
         if self.gpu:
-            if type(target) == torch.Tensor:
-                target = target.cuda()
-                metric = self.metric(prediction, target)
-            else:
-                target = [_.cuda() for _ in target]
-                metric = self.metric(prediction, target[-1])
+            target = target.cuda()
 
         loss = self.loss(prediction, target)
-
+        metric = self.metric(prediction, target)
         self.loss_meter.add(loss.item(), bs)
         self.metric_meter.add(metric, bs)
 
@@ -239,3 +235,48 @@ class ClassificationTrainer:
         torch.manual_seed(seed)
         torch.cuda.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
+
+
+@TransformFactory.register('MultiPatchTrainer')
+class MultiPatchTrainer(ClassificationTrainer):
+    def __init__(self):
+        super().__init__()
+
+    def step(self, x, target, train=True):
+
+        bs = x.size(0)
+        if self.gpu:
+            x = x.cuda()
+
+        prediction = self.model(x)
+
+        if train:
+            if self.gpu:
+                target = [_.cuda() for _ in target]
+
+            loss = self.loss(prediction, target)
+            metric = self.metric(prediction, target[-1])
+            self.loss_meter.add(loss.item(), bs)
+            self.metric_meter.add(metric, bs)
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+
+            if self.global_step % self.log_every == 0:
+                # log to tensorboard
+                self.tensorboard.add_scalar('Train/Loss-Step', self.loss_meter.cur, global_step=self.global_step)
+                self.tensorboard.add_scalar('Train/Metric-Step', self.metric_meter.cur, global_step=self.global_step)
+                if self.optimizer.__class__.__name__ != 'AdamWarmup':
+                    for lr_id, lr in enumerate(self.lr_scheduler.get_lr()):
+                        self.tensorboard.add_scalar('Train/LR%d' % lr_id, lr, global_step=self.global_step)
+                else:
+                    for lr_id, lr in enumerate(self.optimizer.get_lr()):
+                        self.tensorboard.add_scalar('Train/LR%d' % lr_id, lr, global_step=self.global_step)
+            self.global_step += 1
+        else:
+            if self.gpu:
+                target = target.cuda()
+            loss = self.loss(prediction, target)
+            metric = self.metric(prediction, target)
+            self.loss_meter.add(loss.item(), bs)
+            self.metric_meter.add(metric, bs)

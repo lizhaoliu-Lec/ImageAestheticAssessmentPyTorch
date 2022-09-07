@@ -299,7 +299,7 @@ class AVAStyleClassificationDataset(AVABaseDataset):
 
 
 @DatasetFactory.register('AVADatasetWithIndex')
-class AVAIndexDataset(VisionDataset):
+class AVADatasetWithIndex(VisionDataset):
     def __init__(self, root, split='train', transforms=None, base_dataset: str = 'AVAAestheticClassificationDataset'):
         self.dataset = DatasetFactory.instantiate(
             {'name': base_dataset, 'params': {'root': root, 'split': split, 'transforms': transforms}})
